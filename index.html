@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>魔都轉生 · Demon Covenant</title>
+  <meta name="description" content="與惡魔交談、締結契約，在崩毀的東京活下去。 A first-person demon-negotiating dungeon RPG in a ruined Tokyo.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@500;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css?v=1">
+  <script type="importmap">
+    { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
+  </script>
+</head>
+<body>
+  <canvas id="view"></canvas>
+
+  <!-- title -->
+  <div id="title">
+    <div class="logo"><div class="kanji">魔都轉生</div><div class="en">DEMON COVENANT</div></div>
+    <p id="t-sub"></p>
+    <div class="tbtns"><button id="t-cont" class="big" hidden></button><button id="t-new" class="big"></button><button id="t-lang"></button></div>
+    <p id="t-help" class="help"></p>
+  </div>
+
+  <!-- exploring -->
+  <div id="hud" hidden>
+    <div id="where"></div>
+    <div id="moon"></div>
+    <div id="macca"></div>
+    <canvas id="map" width="190" height="190"></canvas><i id="danger" title="danger"></i>
+    <div id="party"></div>
+    <div id="pad"><button id="tp-menu">☰</button><button id="tp-up">▲</button><button id="tp-map">⌗</button><button id="tp-left">⟲</button><button id="tp-down">▼</button><button id="tp-right">⟳</button></div>
+  </div>
+  <div id="bigwrap" hidden><canvas id="bigmap" width="560" height="560"></canvas></div>
+
+  <!-- battle -->
+  <div id="battle" hidden><div id="icons"></div><div id="foes"></div></div>
+
+  <div id="ui"></div>
+  <div id="banner"></div>
+  <div id="toast"></div>
+  <div id="flash"></div>
+  <div id="fade"></div>
+
+  <script type="module" src="js/main.js?v=1"></script>
+  <script src="/hub.js" data-pos="top-left" defer></script>
+</body>
+</html>
