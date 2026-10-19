@@ -626,7 +626,7 @@ addEventListener('keydown', (e) => {
   if (R.mode === 'title') { if (k === 'ok') ($('t-cont').hidden ? newGame() : loadGame()); return; }
   if (R.mode !== 'explore') return;
   held.add(k);
-  if (k === 'left' || k === 'right') turn(k === 'left' ? 1 : -1);
+  if (k === 'left' || k === 'right') turn(k === 'left' ? -1 : 1);     // directions go clockwise: north, east, south, west
   else if (k === 'up' || k === 'down') tryStep(k === 'down');
   else if (k === 'sl' || k === 'sr') tryStep(false, k === 'sl' ? -1 : 1);
   else if (k === 'back' || k === 'menu') mainMenu();
@@ -634,7 +634,7 @@ addEventListener('keydown', (e) => {
 });
 addEventListener('keyup', (e) => { const k = KEYMAP[e.key]; if (k) held.delete(k); });
 // touch: the on-screen pad
-for (const [id, fn] of [['tp-up', () => tryStep(false)], ['tp-down', () => tryStep(true)], ['tp-left', () => turn(1)], ['tp-right', () => turn(-1)], ['tp-menu', () => mainMenu()], ['tp-map', () => { if (R.mode === 'explore' && !R.busy) { R.busy = true; $('bigwrap').hidden = false; drawMap(true); modal = () => { $('bigwrap').hidden = true; modal = null; R.busy = false; }; $('bigwrap').onclick = () => modal && modal(); } }]]) {
+for (const [id, fn] of [['tp-up', () => tryStep(false)], ['tp-down', () => tryStep(true)], ['tp-left', () => turn(-1)], ['tp-right', () => turn(1)], ['tp-menu', () => mainMenu()], ['tp-map', () => { if (R.mode === 'explore' && !R.busy) { R.busy = true; $('bigwrap').hidden = false; drawMap(true); modal = () => { $('bigwrap').hidden = true; modal = null; R.busy = false; }; $('bigwrap').onclick = () => modal && modal(); } }]]) {
   const b = $(id); b.addEventListener('pointerdown', (e) => { e.preventDefault(); audio.start(); if (!modal) fn(); b.dataset.hold = '1'; clearInterval(b._t); if (id === 'tp-up' || id === 'tp-down') b._t = setInterval(() => { if (b.dataset.hold && !modal) fn(); }, 260); });
   for (const ev of ['pointerup', 'pointerleave', 'pointercancel']) b.addEventListener(ev, () => { b.dataset.hold = ''; clearInterval(b._t); });
 }
