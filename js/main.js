@@ -172,6 +172,8 @@ function turn(d) {
   if (R.anim || R.busy || R.mode !== 'explore') return;
   const from = -R.dir * Math.PI / 2; R.dir = (R.dir + d + 4) % 4;
   R.anim = { kind: 'turn', from, to: from - d * Math.PI / 2, t: 0, dur: 0.16 };
+  S.pos = { x: R.x, y: R.y, dir: R.dir };
+  reveal(); drawMap();          // the map arrow turns with you, and you see down the new corridor
 }
 async function arrived() {
   S.steps++; R.stepsHere++; S.pos = { x: R.x, y: R.y, dir: R.dir };
