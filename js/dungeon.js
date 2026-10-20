@@ -2,7 +2,7 @@
 // chests, story spots and the boss. No DOM.
 //   tiles: '#' wall, '.' floor, 'U' way back up, 'D' way down, 'T' terminal (rest, save, shop), 'F' fusion altar,
 //          'C' chest, 'N' story spot, 'B' boss (becomes 'D' once beaten)
-import { FLOORS, AREAS } from './data.js';
+import { FLOORS, AREAS } from './data.js?v=4';
 
 export function makeRng(seed) {
   return function () { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };

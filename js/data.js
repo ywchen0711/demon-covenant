@@ -56,7 +56,24 @@ export const SKILLS = {
   ironwall: S('鐵壁', 'Iron Wall', null, 'buff', 1, { mp: 10 }, 'party', { stat: 'def' }),
   hex:      S('衰弱', 'Hex', null, 'debuff', 1, { mp: 10 }, 'all', { stat: 'atk' }),
   rend:     S('破甲', 'Rend', null, 'debuff', 1, { mp: 10 }, 'all', { stat: 'def' }),
+  // drains, heavy blows, focusing, reflecting walls, clearing boosts, and ailments (poison, sleep)
+  drain:    S('吸血', 'Life Drain', 'dark', 'atk', 75, { mp: 6 }, 'one', { drain: 0.5 }),
+  mpDrain:  S('吸魔', 'Spirit Drain', 'almighty', 'atk', 30, {}, 'one', { mpdrain: 0.6 }),
+  venom:    S('毒牙', 'Venom Bite', 'phys', 'atk', 80, { hp: 8 }, 'one', { ail: 'poison', chance: 0.45 }),
+  deathbound: S('殺陣', 'Deathbound', 'phys', 'atk', 150, { hp: 22 }, 'all'),
+  godhand:  S('神之手', 'God\'s Hand', 'phys', 'atk', 290, { hp: 24 }, 'one', { crit: 0.3 }),
+  charge:   S('蓄力', 'Charge', null, 'charge', 0, { mp: 8 }, 'self', { stat: 'phys' }),
+  focus:    S('集中', 'Concentrate', null, 'charge', 0, { mp: 8 }, 'self', { stat: 'mag' }),
+  physWall: S('物理反射壁', 'Tetrakarn', null, 'shield', 0, { mp: 18 }, 'party', { stat: 'phys' }),
+  magWall:  S('魔法反射壁', 'Makarakarn', null, 'shield', 0, { mp: 18 }, 'party', { stat: 'mag' }),
+  dispel:   S('消除', 'Dekaja', null, 'dispel', 0, { mp: 10 }, 'all'),
+  cleanse:  S('淨化', 'Dekunda', null, 'cleanse', 0, { mp: 10 }, 'party'),
+  poisma:   S('毒霧', 'Poison Mist', null, 'ail', 0, { mp: 5 }, 'all', { ail: 'poison', chance: 0.5 }),
+  dormina:  S('催眠', 'Dormina', null, 'ail', 0, { mp: 5 }, 'one', { ail: 'sleep', chance: 0.6 }),
+  lullaby:  S('搖籃曲', 'Lullaby', null, 'ail', 0, { mp: 12 }, 'all', { ail: 'sleep', chance: 0.4 }),
 };
+// ailments last until the battle ends: poison takes a bit of health each turn, sleep skips turns (and a hit wakes)
+export const AIL_NAME = { poison: ['中毒', 'Poison'], sleep: ['睡眠', 'Sleep'] };
 
 // ---------------------------------------------------------------- races, and what talking to them is like
 // personality: what kind of answers they like in a negotiation (see talk.js)
@@ -126,6 +143,39 @@ const D = [
   ['oni', '鬼', 'Oni', 'brute', 16, 'phys', 'phys:s light:w', { 16: 'mighty', 17: 'rampage', 19: 'warcry' }, ['ogre', '#c83a2a', '#e8c890', '#ffff60']],
   ['rakshasa', '羅剎', 'Rakshasa', 'brute', 24, 'phys', 'phys:s dark:s light:w', { 24: 'cleave', 25: 'mighty', 27: 'rend' }, ['ogre', '#3a5a8a', '#d0d0e0', '#ff3030']],
   ['kinki', '金鬼', 'Kin-ki', 'brute', 31, 'tank', 'phys:r elec:w', { 31: 'myriad', 32: 'ironwall', 34: 'mighty' }, ['ogre', '#c8a030', '#fff0a0', '#ff2020']],
+  // ---- the second covenant: more demons
+  ['jackfrost', '傑克霜精', 'Jack Frost', 'fairy', 6, 'mag', 'ice:n fire:w', { 6: 'ice1', 7: 'dormina', 9: 'heal' }, ['frost', '#e8f4ff', '#3a6ad8', '#40a0ff']],
+  ['pyrojack', '南瓜燈籠', 'Pyro Jack', 'fairy', 12, 'mag', 'fire:n ice:w', { 12: 'fire1', 13: 'poisma', 15: 'fire2' }, ['frost', '#ff9a30', '#4a2a5a', '#ffe040']],
+  ['oberon', '妖精王', 'Oberon', 'fairy', 40, 'mag', 'elec:d force:s dark:w', { 40: 'elecAll2', 41: 'magWall', 43: 'healAll2' }, ['knight', '#3a7a4a', '#ffd860', '#ffffff', ['fairywings', 'crown']]],
+  ['kingfrost', '霜之王', 'King Frost', 'fairy', 46, 'tank', 'ice:r fire:w', { 46: 'iceAll2', 47: 'ironwall', 49: 'heal2' }, ['frost', '#f0f8ff', '#2a4ab8', '#80c0ff', ['crown']]],
+  ['kitsune', '狐仙', 'Kitsune', 'beast', 10, 'mag', 'fire:s ice:w', { 10: 'fire1', 11: 'dormina', 13: 'drain' }, ['fox', '#f0a040', '#fff0e0', '#ff4040']],
+  ['orthrus', '雙頭犬', 'Orthrus', 'beast', 25, 'phys', 'fire:s ice:w', { 25: 'venom', 26: 'fire2', 28: 'charge' }, ['dog', '#5a3a2a', '#ff8040', '#ffff40', ['heads2']]],
+  ['kyubi', '九尾狐', 'Kyubi', 'beast', 38, 'mag', 'fire:d light:s ice:w', { 38: 'fireAll2', 39: 'lullaby', 41: 'focus' }, ['fox', '#fff0d0', '#ff6a30', '#ff2060', ['tails9']]],
+  ['gnome', '地精', 'Gnome', 'jirae', 2, 'tank', 'phys:s force:w', { 2: 'lunge', 4: 'heal' }, ['imp', '#9a7a5a', '#4a8a3a', '#ffffff', ['hat']]],
+  ['golem', '魔像', 'Golem', 'jirae', 22, 'tank', 'phys:s force:s elec:w', { 22: 'mighty', 23: 'physWall', 25: 'rampage' }, ['golem', '#8a8a7a', '#40d0ff', '#40e0ff']],
+  ['titan', '泰坦', 'Titan', 'jirae', 36, 'tank', 'phys:s elec:s force:w', { 36: 'deathbound', 37: 'charge', 39: 'ironwall' }, ['golem', '#7a5a3a', '#ff8030', '#ffd040', ['horns']]],
+  ['poltergeist', '騷靈', 'Poltergeist', 'foul', 4, 'mag', 'phys:s light:w', { 4: 'force1', 5: 'poisma' }, ['wisp', '#a080ff', '#f0e0ff', '#ffffff']],
+  ['mummy', '木乃伊', 'Mummy', 'foul', 11, 'tank', 'dark:n fire:w light:w', { 11: 'venom', 12: 'poisma', 14: 'rampage' }, ['zombie', '#d8d0b0', '#8a7a5a', '#ff8020', ['wraps']]],
+  ['reaper', '死神', 'Reaper', 'foul', 35, 'mag', 'dark:r light:w', { 35: 'dark3', 36: 'drain', 38: 'darkAll' }, ['reaper', '#1c1a26', '#d8d4c8', '#ff3030']],
+  ['apsaras', '天女', 'Apsaras', 'yoma', 9, 'mag', 'ice:s elec:w', { 9: 'ice1', 10: 'heal', 12: 'cleanse' }, ['lady', '#80c0f0', '#fff0f8', '#40a0ff', ['halo']]],
+  ['kurama', '鞍馬天狗', 'Kurama Tengu', 'yoma', 36, 'fast', 'force:d elec:w', { 36: 'force3', 37: 'forceAll2', 39: 'charge' }, ['bird', '#c83a2a', '#f8f0e0', '#ffd040', ['halo']]],
+  ['virtue', '力天使', 'Virtue', 'divine', 20, 'bal', 'light:n elec:s dark:w', { 20: 'elec2', 21: 'cleanse', 23: 'light1' }, ['knight', '#d0d8f0', '#ffd860', '#80c0ff', ['wings2']]],
+  ['valkyrie', '女武神', 'Valkyrie', 'divine', 28, 'phys', 'phys:s ice:s fire:w', { 28: 'mighty', 29: 'charge', 31: 'ice2' }, ['knight', '#8a9ab8', '#ffd040', '#ffffff', ['wings2']]],
+  ['dominion', '主天使', 'Dominion', 'divine', 40, 'mag', 'light:r dark:w', { 40: 'light3', 41: 'magWall', 43: 'healAll2' }, ['angel', '#ffffff', '#ffd040', '#ff4040', ['wings2', 'crown']]],
+  ['metatron', '梅塔特隆', 'Metatron', 'divine', 54, 'mag', 'light:r phys:s dark:s', { 54: 'light3', 55: 'lightAll', 57: 'magWall' }, ['knight', '#fff4c0', '#ffffff', '#ffe060', ['wings2', 'halo']]],
+  ['harpy', '鷹身女妖', 'Harpy', 'avian', 3, 'fast', 'force:s elec:w', { 3: 'force1', 4: 'rampage' }, ['bird', '#8a6a4a', '#f0c8a0', '#ff4040']],
+  ['yatagarasu', '八咫烏', 'Yatagarasu', 'avian', 37, 'mag', 'light:d fire:s dark:w', { 37: 'lightAll', 38: 'fire3', 40: 'cleanse' }, ['bird', '#1a1a2a', '#ffd040', '#ff3020', ['halo']]],
+  ['lamia', '拉彌亞', 'Lamia', 'snake', 18, 'phys', 'fire:s ice:w', { 18: 'venom', 19: 'dormina', 21: 'rampage' }, ['mermaid', '#4a8a4a', '#f0c8a8', '#ffd040']],
+  ['seiryu', '青龍', 'Seiryu', 'snake', 27, 'mag', 'ice:d fire:w', { 27: 'iceAll', 28: 'heal2', 30: 'focus' }, ['dragon', '#3a7ad8', '#c8f0ff', '#ffff80']],
+  ['quetzal', '羽蛇神', 'Quetzalcoatl', 'snake', 39, 'mag', 'force:d light:s elec:w', { 39: 'forceAll2', 40: 'healAll2', 42: 'focus' }, ['dragon', '#40b080', '#ffd040', '#ffffff', ['wings2']]],
+  ['fafnir', '法夫納', 'Fafnir', 'snake', 48, 'phys', 'fire:d ice:w', { 48: 'fireAll2', 49: 'deathbound', 51: 'physWall' }, ['dragon', '#6a2a1a', '#ffb040', '#ff2020', ['horns']]],
+  ['siren', '塞壬', 'Siren', 'night', 13, 'mag', 'ice:s elec:w', { 13: 'lullaby', 14: 'ice1', 16: 'mpDrain' }, ['mermaid', '#3aa0b8', '#f8d8c8', '#80ffff']],
+  ['vampire', '吸血鬼', 'Vampire', 'night', 33, 'phys', 'dark:n light:w fire:w', { 33: 'drain', 34: 'dormina', 36: 'mighty' }, ['knight', '#2a0a1a', '#c02040', '#ff2040', ['batwings']]],
+  ['lilith', '莉莉絲', 'Lilith', 'night', 44, 'mag', 'dark:d ice:s light:w', { 44: 'darkAll', 45: 'lullaby', 47: 'mpDrain' }, ['lady', '#3a0a2a', '#ff80c0', '#ff2080', ['batwings', 'horns']]],
+  ['momunofu', '武者', 'Momunofu', 'brute', 12, 'phys', 'phys:s elec:w', { 12: 'lunge', 13: 'charge', 15: 'cleave' }, ['knight', '#5a3a2a', '#c84a2a', '#ffffff', ['horns']]],
+  ['minotaur', '米諾陶', 'Minotaur', 'brute', 22, 'phys', 'phys:s ice:w', { 22: 'mighty', 23: 'rampage', 25: 'warcry' }, ['ogre', '#5a3a1a', '#d8c8a0', '#ff3020', ['horns']]],
+  ['shuten', '酒吞童子', 'Shuten-doji', 'brute', 39, 'phys', 'phys:s fire:s light:w', { 39: 'deathbound', 40: 'charge', 42: 'godhand' }, ['ogre', '#a02a3a', '#ffe0a0', '#ffd040', ['horns']]],
+  ['surt', '蘇爾特', 'Surt', 'brute', 52, 'phys', 'fire:r ice:w', { 52: 'fireAll2', 53: 'ruin', 55: 'godhand' }, ['golem', '#2a1a1a', '#ff5020', '#ffd040', ['crown']]],
 ];
 // stat builds: how a demon's points spread over strength, magic, vitality, agility and luck
 const BUILD = { phys: [1.4, 0.6, 1.0, 1.0, 0.8], mag: [0.6, 1.5, 0.8, 1.0, 1.0], tank: [1.0, 0.8, 1.5, 0.7, 0.9], fast: [1.0, 0.9, 0.7, 1.5, 1.0], bal: [1.0, 1.0, 1.0, 1.0, 1.0] };
@@ -141,15 +191,15 @@ export const DEMON_ORDER = D.map((d) => d[0]);
 // bosses: not recruitable; hp multiplier and extra press turns
 const B = (id, zh, en, race, lv, build, aff, skills, art, hpX, turns) => { DEMONS[id] = { id, name: [zh, en], race, lv, build, aff: parseAff(aff), skills, art, boss: true, hpX, turns }; };
 B('gozuki', '牛頭鬼', 'Gozuki', 'brute', 9, 'phys', 'phys:s fire:s ice:w', { 1: 'lunge', 2: 'rampage', 3: 'warcry' }, ['ogre', '#6a3a2a', '#e0d0b0', '#ff3020', ['horns']], 2.9, 2);
-B('nue', '鵺', 'Nue', 'beast', 16, 'mag', 'elec:d dark:s force:w', { 1: 'elec2', 2: 'elecAll', 3: 'dark1', 4: 'rampage' }, ['chimera', '#4a3a5a', '#e8c070', '#80ffff'], 3.9, 2);
+B('nue', '鵺', 'Nue', 'beast', 16, 'mag', 'elec:d dark:s force:w', { 1: 'elec2', 2: 'elecAll', 3: 'dark1', 4: 'rampage', 5: 'dormina' }, ['chimera', '#4a3a5a', '#e8c070', '#80ffff'], 3.9, 2);
 B('garuda', '迦樓羅', 'Garuda', 'avian', 24, 'bal', 'force:d elec:w fire:s', { 1: 'force2', 2: 'forceAll', 3: 'mighty', 4: 'warcry' }, ['bird', '#d89030', '#3a8a5a', '#ffffff'], 3.6, 2);
-B('orochi', '八岐大蛇', 'Yamata no Orochi', 'snake', 31, 'phys', 'ice:d fire:w dark:s', { 1: 'iceAll', 2: 'myriad', 3: 'ice3', 4: 'rend' }, ['hydra', '#3a5a3a', '#c8b060', '#ff2020'], 5.5, 2);
-B('ren', '蓮・天之劍', 'Ren, Sword of Heaven', 'divine', 37, 'phys', 'light:n phys:s dark:w', { 1: 'light3', 2: 'myriad', 3: 'healAll2', 4: 'warcry' }, ['angel', '#f0f0ff', '#ffd040', '#40a0ff', ['wings2']], 5.5, 2);
-B('yui', '結衣・夜之后', 'Yui, Queen of Night', 'night', 37, 'mag', 'dark:n force:s light:w', { 1: 'dark3', 2: 'darkAll', 3: 'iceAll2', 4: 'hex' }, ['lady', '#2a0a3a', '#ff4090', '#ff80ff', ['batwings', 'crown']], 5.5, 2);
-B('tiamat', '提亞瑪特', 'Tiamat', 'snake', 43, 'bal', 'ice:s fire:s elec:s force:s', { 1: 'ruin', 2: 'fireAll2', 3: 'iceAll2', 4: 'elecAll2', 5: 'ruin2', 6: 'rend' }, ['hydra', '#2a1a4a', '#c040ff', '#ffffff', ['crown']], 4.8, 3);
+B('orochi', '八岐大蛇', 'Yamata no Orochi', 'snake', 31, 'phys', 'ice:d fire:w dark:s', { 1: 'iceAll', 2: 'myriad', 3: 'ice3', 4: 'rend', 5: 'poisma' }, ['hydra', '#3a5a3a', '#c8b060', '#ff2020'], 5.5, 2);
+B('ren', '蓮・天之劍', 'Ren, Sword of Heaven', 'divine', 37, 'phys', 'light:n phys:s dark:w', { 1: 'light3', 2: 'myriad', 3: 'healAll2', 4: 'warcry', 5: 'charge' }, ['angel', '#f0f0ff', '#ffd040', '#40a0ff', ['wings2']], 5.5, 2);
+B('yui', '結衣・夜之后', 'Yui, Queen of Night', 'night', 37, 'mag', 'dark:n force:s light:w', { 1: 'dark3', 2: 'darkAll', 3: 'iceAll2', 4: 'hex', 5: 'lullaby' }, ['lady', '#2a0a3a', '#ff4090', '#ff80ff', ['batwings', 'crown']], 5.5, 2);
+B('tiamat', '提亞瑪特', 'Tiamat', 'snake', 43, 'bal', 'ice:s fire:s elec:s force:s', { 1: 'ruin', 2: 'fireAll2', 3: 'iceAll2', 4: 'elecAll2', 5: 'ruin2', 6: 'rend', 7: 'dispel' }, ['hydra', '#2a1a4a', '#c040ff', '#ffffff', ['crown']], 4.8, 3);
 
 // ---------------------------------------------------------------- the hero
-export const HERO = { build: 'bal', skills: { 1: 'lunge', 3: 'heal', 12: 'cleave', 20: 'mighty', 28: 'myriad' }, aff: {} };
+export const HERO = { build: 'bal', skills: { 1: 'lunge', 3: 'heal', 6: 'charge', 12: 'cleave', 16: 'cleanse', 20: 'mighty', 28: 'myriad', 34: 'heal2', 42: 'deathbound', 50: 'godhand', 58: 'ruin2' }, aff: {} };
 
 // ---------------------------------------------------------------- items
 export const ITEMS = {
@@ -159,18 +209,62 @@ export const ITEMS = {
   water:   { name: ['靈水', 'Spirit Water'], use: 'mp', amt: 30, price: 250, target: 'ally' },
   incense: { name: ['返魂香', 'Revival Incense'], use: 'revive', amt: 50, price: 500, target: 'dead' },
   smoke:   { name: ['煙玉', 'Smoke Ball'], use: 'escape', price: 80, target: 'self' },
+  antidote:{ name: ['解毒草', 'Antidote'], use: 'cure', ail: 'poison', price: 40, target: 'ally' },
+  bell:    { name: ['醒神鈴', 'Waking Bell'], use: 'cure', ail: 'sleep', price: 60, target: 'ally' },
+  panacea: { name: ['萬靈丹', 'Panacea'], use: 'cure', ail: 'all', price: 160, target: 'ally' },
   gem:     { name: ['魔晶石', 'Demon Crystal'], use: null, price: 300 },
 };
-export const SHOP = ['salve', 'salve2', 'water', 'incense', 'smoke', 'jade'];
+export const SHOP = ['salve', 'salve2', 'water', 'incense', 'smoke', 'antidote', 'bell', 'panacea', 'jade'];
+
+// ---------------------------------------------------------------- equipment
+// slot: weapon / armor (the hero only) or acc (anyone, demons too). atk adds to physical damage, mag to magic damage,
+// def takes away from damage taken; st..lu add to stats, hp / mp add a percentage; aff adds resistances (never makes a
+// weakness worse); guard keeps an ailment away ('all' for both). tier: the first area whose shops sell it; drop: never sold.
+const E = (zh, en, slot, price, tier, extra) => ({ name: [zh, en], slot, price, tier, ...extra });
+export const EQUIPS = {
+  knife:    E('小刀', 'Pocket Knife', 'weapon', 50, 0, { atk: 4 }),
+  pipe:     E('鐵管', 'Iron Pipe', 'weapon', 380, 0, { atk: 10 }),
+  katana:   E('太刀', 'Tachi', 'weapon', 1400, 1, { atk: 18 }),
+  staff:    E('錫杖', 'Monk\'s Staff', 'weapon', 1600, 1, { atk: 8, mag: 14, ma: 3 }),
+  spear:    E('十文字槍', 'Cross Spear', 'weapon', 3600, 2, { atk: 26, ag: 2 }),
+  wand:     E('靈木杖', 'Spirit Wand', 'weapon', 4200, 3, { atk: 12, mag: 26, ma: 5 }),
+  kusanagi: E('草薙劍', 'Kusanagi', 'weapon', 0, 9, { atk: 36, st: 4, drop: true }),
+  masamune: E('正宗', 'Masamune', 'weapon', 0, 9, { atk: 48, st: 6, lu: 5, drop: true }),
+  jacket:   E('學生服', 'School Uniform', 'armor', 50, 0, { def: 2 }),
+  vest:     E('防彈背心', 'Kevlar Vest', 'armor', 450, 0, { def: 5 }),
+  haori:    E('陣羽織', 'Battle Haori', 'armor', 1700, 1, { def: 8, vi: 2 }),
+  suit:     E('魔裝甲', 'Demonica Suit', 'armor', 4400, 2, { def: 12, vi: 3, hp: 10 }),
+  robe:     E('天衣', 'Celestial Robe', 'armor', 7800, 3, { def: 15, ma: 4, mp: 15 }),
+  yoroi:    E('神鎧', 'Divine Armour', 'armor', 0, 9, { def: 22, vi: 6, hp: 15, drop: true }),
+  clover:   E('四葉草', 'Four-leaf Clover', 'acc', 600, 0, { lu: 6 }),
+  bandage:  E('護身繃帶', 'Charm Bandage', 'acc', 500, 0, { hp: 10 }),
+  amulet:   E('護身符', 'Amulet', 'acc', 1200, 1, { guard: 'all' }),
+  ratskin:  E('火鼠皮衣', 'Fire-Rat Pelt', 'acc', 1100, 1, { aff: 'fire:s' }),
+  hairpin:  E('雪女之簪', 'Yuki-onna\'s Pin', 'acc', 1100, 1, { aff: 'ice:s' }),
+  raiju:    E('雷獸之角', 'Raiju Horn', 'acc', 1100, 1, { aff: 'elec:s' }),
+  windbag:  E('風神袋', 'Wind God\'s Bag', 'acc', 1100, 1, { aff: 'force:s' }),
+  ring:     E('力之戒', 'Ring of Might', 'acc', 1500, 1, { st: 4 }),
+  sage:     E('賢者之戒', 'Sage\'s Ring', 'acc', 1500, 1, { ma: 4 }),
+  mirror:   E('八咫鏡片', 'Mirror Shard', 'acc', 1900, 2, { aff: 'light:s' }),
+  jet:      E('黑曜石', 'Obsidian', 'acc', 1900, 2, { aff: 'dark:s' }),
+  feather:  E('天狗羽扇', 'Tengu Fan', 'acc', 2400, 2, { ag: 6 }),
+  bead:     E('命之珠', 'Life Bead', 'acc', 2600, 2, { hp: 20 }),
+  magatama: E('勾玉', 'Magatama', 'acc', 3800, 3, { mp: 25, hp: 10 }),
+  stone:    E('殺生石', 'Killing Stone', 'acc', 0, 9, { st: 5, ma: 5, aff: 'phys:s', drop: true }),
+};
+for (const e of Object.values(EQUIPS)) e.affs = parseAff(e.aff);
+export const SLOTS = ['weapon', 'armor', 'acc'];
+// what each boss leaves behind
+export const BOSS_DROP = { gozuki: 'katana', nue: 'raiju', garuda: 'feather', orochi: 'kusanagi', ren: 'masamune', yui: 'yoroi' };
 
 // ---------------------------------------------------------------- areas and floors
 // size: the maze size (odd); enc: the demons met there (level range around their own level); look: see js/world3d.js
 export const AREAS = [
-  { id: 'shinjuku', name: ['新宿地下街', 'Shinjuku Underground'], floors: 2, size: 15, look: 'subway', enc: ['slime', 'pixie', 'kodama', 'shiisa', 'huapo', 'kappa', 'caitsith', 'wisp', 'ippon', 'sudama', 'lilim'], boss: 'gozuki', music: 0 },
-  { id: 'ikebukuro', name: ['池袋廢墟商場', 'Ikebukuro Ruined Mall'], floors: 2, size: 17, look: 'mall', enc: ['itsumade', 'kelpie', 'angel', 'karasu', 'nekomata', 'naga', 'incubus', 'ghoul', 'archangel', 'oni', 'lilim', 'sudama'], boss: 'nue', music: 1 },
-  { id: 'tower', name: ['東京鐵塔', 'Tokyo Tower'], floors: 2, size: 17, look: 'tower', enc: ['onmoraki', 'hitokoto', 'inugami', 'yaksini', 'leanan', 'mizuchi', 'thunderbird', 'archangel', 'oni', 'mothman', 'incubus'], boss: 'garuda', music: 2 },
-  { id: 'kudan', name: ['九段靈廟', 'Kudan Spirit Shrine'], floors: 2, size: 19, look: 'shrine', enc: ['mothman', 'rakshasa', 'principality', 'succubus', 'tsuchigumo', 'phoenix', 'dakini', 'mizuchi', 'thunderbird'], boss: 'orochi', music: 3 },
-  { id: 'abyss', name: ['東京深淵', 'The Abyss of Tokyo'], floors: 3, size: 19, look: 'abyss', enc: ['dakini', 'power', 'rajanaga', 'kinki', 'titania', 'cerberus', 'succubus', 'phoenix', 'principality'], boss: 'tiamat', music: 4 },
+  { id: 'shinjuku', name: ['新宿地下街', 'Shinjuku Underground'], floors: 2, size: 15, look: 'subway', enc: ['slime', 'pixie', 'gnome', 'harpy', 'kodama', 'shiisa', 'poltergeist', 'huapo', 'kappa', 'jackfrost', 'caitsith', 'wisp', 'ippon', 'sudama', 'lilim'], boss: 'gozuki', music: 0 },
+  { id: 'ikebukuro', name: ['池袋廢墟商場', 'Ikebukuro Ruined Mall'], floors: 2, size: 17, look: 'mall', enc: ['itsumade', 'apsaras', 'kelpie', 'kitsune', 'mummy', 'angel', 'karasu', 'pyrojack', 'momunofu', 'siren', 'nekomata', 'naga', 'incubus', 'ghoul', 'archangel', 'oni', 'lilim', 'sudama'], boss: 'nue', music: 1 },
+  { id: 'tower', name: ['東京鐵塔', 'Tokyo Tower'], floors: 2, size: 17, look: 'tower', enc: ['onmoraki', 'hitokoto', 'lamia', 'inugami', 'yaksini', 'virtue', 'leanan', 'mizuchi', 'golem', 'minotaur', 'thunderbird', 'archangel', 'oni', 'mothman', 'incubus'], boss: 'garuda', music: 2 },
+  { id: 'kudan', name: ['九段靈廟', 'Kudan Spirit Shrine'], floors: 2, size: 19, look: 'shrine', enc: ['mothman', 'rakshasa', 'principality', 'orthrus', 'succubus', 'seiryu', 'tsuchigumo', 'valkyrie', 'phoenix', 'dakini', 'mizuchi', 'thunderbird'], boss: 'orochi', music: 3 },
+  { id: 'abyss', name: ['東京深淵', 'The Abyss of Tokyo'], floors: 3, size: 19, look: 'abyss', enc: ['dakini', 'power', 'rajanaga', 'kinki', 'vampire', 'titania', 'cerberus', 'reaper', 'titan', 'kurama', 'yatagarasu', 'kyubi', 'quetzal', 'shuten', 'oberon', 'dominion', 'succubus', 'phoenix', 'principality'], boss: 'tiamat', music: 4 },
 ];
 // every floor in order: { area, floor (1-based), last (the area's last floor), boss (a boss waits at the far end) }
 export const FLOORS = AREAS.flatMap((a, ai) => Array.from({ length: a.floors }, (_, i) => ({ area: ai, floor: i + 1, last: i === a.floors - 1, boss: i === a.floors - 1 || (a.id === 'abyss' && i === 1) })));

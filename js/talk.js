@@ -1,7 +1,7 @@
 // DEMON COVENANT — talking to demons. Each race has a temperament; a demon asks two questions and makes one demand,
 // and if it likes how you answered (and you are strong enough, and there is room in your summoning app) it joins you.
 // No DOM.
-import { DEMONS, RACES, ITEMS } from './data.js';
+import { DEMONS, RACES, ITEMS } from './data.js?v=4';
 
 // what each temperament thinks of each kind of answer
 const LIKES = {

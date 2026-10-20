@@ -123,3 +123,13 @@ body.shake #view, body.shake #battle { animation: shake 0.3s; }
 @keyframes shake { 0%, 100% { transform: none; } 25% { transform: translate(-6px, 3px); } 50% { transform: translate(5px, -4px); } 75% { transform: translate(-3px, 2px); } }
 @media (prefers-reduced-motion: reduce) { .foe canvas, .ic.blink, .box .more { animation: none; } }
 @media (max-width: 700px) { .foe { width: 30vw; } .foe.boss { width: 60vw; } #where { font-size: 17px; left: 64px; } #map { width: 110px; height: 110px; } }
+
+/* ---------- ailments, walls, Charge, equipment ---------- */
+.tag { font-style: normal; font-family: var(--mono); font-size: 10px; margin-left: 5px; padding: 0 4px; border-radius: 3px; vertical-align: 2px; background: rgba(255, 255, 255, 0.1); color: var(--ink); }
+.tag.poison { background: #6a2a8a; color: #f0c8ff; } .tag.sleep { background: #2a3a8a; color: #c8d8ff; }
+.tag.wall { background: #1a5a6a; color: var(--cy2); } .tag.charge { background: #8a4a10; color: #ffd8a0; }
+.pop.poison { color: #d080ff; } .pop.sleep { color: #a0b8ff; font-size: 26px; }
+.card .gear { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 13px; color: var(--ink); }
+.card .gear span { display: inline-flex; gap: 6px; align-items: baseline; } .card .gear i { font-style: normal; font-size: 11px; color: var(--gold); font-family: var(--mono); }
+.foe canvas { filter: drop-shadow(0 6px 14px #000) drop-shadow(0 0 18px rgba(255, 60, 90, 0.18)); }
+.foe.boss canvas { filter: drop-shadow(0 6px 14px #000) drop-shadow(0 0 28px rgba(255, 40, 60, 0.45)); }

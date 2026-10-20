@@ -1,8 +1,8 @@
 // DEMON COVENANT — a floor in 3D. Textures are drawn on canvases (the way HUSH does it); walls are instanced boxes,
 // and the special tiles get glowing markers. Each area has its own look.
 import * as THREE from 'three';
-import { portrait } from './art.js';
-import { DEMONS } from './data.js';
+import { portrait } from './art.js?v=4';
+import { DEMONS } from './data.js?v=4';
 
 export const TILE = 3, WALL_H = 3.2;
 const cache = new Map();
@@ -21,23 +21,23 @@ function cracks(g, w, h, n, col) { g.strokeStyle = col; g.lineWidth = 1.5; for (
 
 // ---------------------------------------------------------------- the five looks
 const LOOKS = {
-  subway: { fog: '#0a0e0c', fogD: 0.11, lamp: '#e8fff0', amb: ['#3a4a44', '#0a0806', 0.5],
+  subway: { fog: '#0a0e0c', fogD: 0.11, lamp: '#e8fff0', amb: ['#3a4a44', '#0a0806', 0.5], sconce: '#c8ffe0', mote: '#d0ffe0',
     wall: (g, w, h) => { g.fillStyle = '#c8ccc0'; g.fillRect(0, 0, w, h); g.strokeStyle = '#8a8e84'; g.lineWidth = 2; for (let y = 0; y < h; y += 32) for (let x = (y / 32 % 2) * 16; x < w; x += 32) g.strokeRect(x, y, 32, 32); g.fillStyle = '#2a7a4a'; g.fillRect(0, h * 0.45, w, 26); g.fillStyle = '#1a1a1a'; g.fillRect(0, h * 0.86, w, h * 0.14); grime(g, w, h, 30, 0.45); cracks(g, w, h, 4, 'rgba(30,30,30,.6)'); },
     floor: (g, w, h) => { g.fillStyle = '#4a4a46'; g.fillRect(0, 0, w, h); for (let i = 0; i < 2000; i++) { g.fillStyle = `rgba(0,0,0,${Math.random() * 0.2})`; g.fillRect(Math.random() * w, Math.random() * h, 2, 2); } g.fillStyle = '#c8b030'; g.fillRect(0, h * 0.46, w, 10); for (let x = 4; x < w; x += 12) { g.fillStyle = '#a89020'; g.fillRect(x, h * 0.46 + 2, 5, 6); } grime(g, w, h, 18, 0.4); },
     ceil: (g, w, h) => { g.fillStyle = '#2a2c2a'; g.fillRect(0, 0, w, h); g.fillStyle = '#e8f8e8'; g.fillRect(w * 0.42, 0, w * 0.16, h); grime(g, w, h, 10, 0.5); } },
-  mall: { fog: '#0e0a0c', fogD: 0.09, lamp: '#ffe0c0', amb: ['#4a3a40', '#100808', 0.5],
+  mall: { fog: '#0e0a0c', fogD: 0.09, lamp: '#ffe0c0', amb: ['#4a3a40', '#100808', 0.5], sconce: '#ff60c0', mote: '#ffd8b0',
     wall: (g, w, h) => { g.fillStyle = '#6a6470'; g.fillRect(0, 0, w, h); g.fillStyle = '#4a4650'; for (let y = h * 0.2; y < h * 0.85; y += 10) g.fillRect(0, y, w, 4); g.fillStyle = '#2a2830'; g.fillRect(0, 0, w, h * 0.2); g.fillStyle = `hsl(${Math.random() * 360},60%,45%)`; g.font = 'bold 40px sans-serif'; g.fillText(['SALE', 'CAFE', 'BOOK', '服飾', '電器'][Math.floor(Math.random() * 5)], 20, h * 0.15); grime(g, w, h, 30, 0.5); cracks(g, w, h, 6, 'rgba(20,10,10,.6)'); },
     floor: (g, w, h) => { for (let y = 0; y < h; y += 64) for (let x = 0; x < w; x += 64) { g.fillStyle = (x + y) / 64 % 2 ? '#7a7068' : '#5a524c'; g.fillRect(x, y, 64, 64); } grime(g, w, h, 30, 0.5); cracks(g, w, h, 8, 'rgba(0,0,0,.5)'); },
     ceil: (g, w, h) => { g.fillStyle = '#3a3438'; g.fillRect(0, 0, w, h); g.strokeStyle = '#2a2428'; for (let x = 0; x < w; x += 32) { g.beginPath(); g.moveTo(x, 0); g.lineTo(x, h); g.stroke(); } grime(g, w, h, 14, 0.5); } },
-  tower: { fog: '#140808', fogD: 0.075, lamp: '#ffd8b0', amb: ['#5a3a30', '#100606', 0.55],
+  tower: { fog: '#140808', fogD: 0.075, lamp: '#ffd8b0', amb: ['#5a3a30', '#100606', 0.55], sconce: '#ff5020', mote: '#ff9040', rise: 1,
     wall: (g, w, h) => { g.fillStyle = '#1a1416'; g.fillRect(0, 0, w, h); g.strokeStyle = '#b8402a'; g.lineWidth = 14; g.strokeRect(8, 8, w - 16, h - 16); g.lineWidth = 9; g.beginPath(); g.moveTo(8, 8); g.lineTo(w - 8, h - 8); g.moveTo(w - 8, 8); g.lineTo(8, h - 8); g.stroke(); g.fillStyle = '#d8d0c0'; for (const [x, y] of [[14, 14], [w - 14, 14], [14, h - 14], [w - 14, h - 14], [w / 2, h / 2]]) { g.beginPath(); g.arc(x, y, 4, 0, 7); g.fill(); } grime(g, w, h, 20, 0.5, '60,20,10'); },
     floor: (g, w, h) => { g.fillStyle = '#2a2a2c'; g.fillRect(0, 0, w, h); g.strokeStyle = '#4a4a4e'; g.lineWidth = 3; for (let i = -h; i < w; i += 16) { g.beginPath(); g.moveTo(i, 0); g.lineTo(i + h, h); g.stroke(); g.beginPath(); g.moveTo(i + h, 0); g.lineTo(i, h); g.stroke(); } grime(g, w, h, 16, 0.5); },
     ceil: (g, w, h) => { g.fillStyle = '#100c0c'; g.fillRect(0, 0, w, h); g.strokeStyle = '#7a2a1a'; g.lineWidth = 8; for (let x = 0; x < w; x += 64) { g.beginPath(); g.moveTo(x, 0); g.lineTo(x, h); g.stroke(); } } },
-  shrine: { fog: '#0a0a14', fogD: 0.1, lamp: '#ffd890', amb: ['#3a3a5a', '#0a0808', 0.5],
+  shrine: { fog: '#0a0a14', fogD: 0.1, lamp: '#ffd890', amb: ['#3a3a5a', '#0a0808', 0.5], sconce: '#ffb050', mote: '#fff0a0', lantern: 1,
     wall: (g, w, h) => { g.fillStyle = '#e8dcc0'; g.fillRect(0, 0, w, h); g.strokeStyle = '#4a2a1a'; g.lineWidth = 10; for (let x = 0; x <= w; x += 64) { g.beginPath(); g.moveTo(x, 0); g.lineTo(x, h); g.stroke(); } g.lineWidth = 4; for (let y = 0; y < h; y += 42) { g.beginPath(); g.moveTo(0, y); g.lineTo(w, y); g.stroke(); } g.fillStyle = '#5a2a1a'; g.fillRect(0, h * 0.82, w, h * 0.18); grime(g, w, h, 24, 0.35); },
     floor: (g, w, h) => { g.fillStyle = '#6a5a3a'; g.fillRect(0, 0, w, h); g.strokeStyle = '#3a2a1a'; g.lineWidth = 3; for (let y = 0; y < h; y += 32) { g.beginPath(); g.moveTo(0, y); g.lineTo(w, y); g.stroke(); } for (let i = 0; i < 40; i++) { g.strokeStyle = 'rgba(0,0,0,.15)'; g.beginPath(); const y = Math.random() * h; g.moveTo(0, y); g.lineTo(w, y + 2); g.stroke(); } grime(g, w, h, 14, 0.4); },
     ceil: (g, w, h) => { g.fillStyle = '#2a1a12'; g.fillRect(0, 0, w, h); g.strokeStyle = '#1a0e08'; g.lineWidth = 12; for (let x = 0; x < w; x += 48) { g.beginPath(); g.moveTo(x, 0); g.lineTo(x, h); g.stroke(); } } },
-  abyss: { fog: '#0c0412', fogD: 0.1, lamp: '#e0b0ff', amb: ['#4a1a5a', '#080208', 0.6],
+  abyss: { fog: '#0c0412', fogD: 0.1, lamp: '#e0b0ff', amb: ['#4a1a5a', '#080208', 0.6], sconce: '#c040ff', mote: '#ff60c0', rise: 1,
     wall: (g, w, h) => { const gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, '#2a0a2a'); gr.addColorStop(1, '#5a1a3a'); g.fillStyle = gr; g.fillRect(0, 0, w, h); for (let i = 0; i < 40; i++) { g.strokeStyle = `rgba(${150 + Math.random() * 100},40,90,.5)`; g.lineWidth = 2 + Math.random() * 4; g.beginPath(); let x = Math.random() * w, y = 0; g.moveTo(x, y); while (y < h) { x += (Math.random() - 0.5) * 30; y += 20; g.lineTo(x, y); } g.stroke(); } for (let i = 0; i < 6; i++) { const x = Math.random() * w, y = Math.random() * h; g.fillStyle = '#ffe0a0'; g.beginPath(); g.ellipse(x, y, 7, 4, 0, 0, 7); g.fill(); g.fillStyle = '#100008'; g.beginPath(); g.arc(x, y, 2.5, 0, 7); g.fill(); } },
     floor: (g, w, h) => { g.fillStyle = '#1a0614'; g.fillRect(0, 0, w, h); for (let i = 0; i < 30; i++) { g.fillStyle = `rgba(160,30,80,${Math.random() * 0.3})`; g.beginPath(); g.ellipse(Math.random() * w, Math.random() * h, 10 + Math.random() * 30, 6 + Math.random() * 14, Math.random() * 3, 0, 7); g.fill(); } },
     ceil: (g, w, h) => { g.fillStyle = '#0a020a'; g.fillRect(0, 0, w, h); grime(g, w, h, 20, 0.6, '80,10,60'); } },
@@ -55,6 +55,8 @@ const screenTex = () => tex('screen', 128, 128, (g, w, h) => {
   g.fillStyle = '#062a3a'; g.fillRect(0, 0, w, h); g.fillStyle = '#40e0ff'; g.font = 'bold 18px monospace'; g.fillText('TERMINAL', 12, 30);
   g.fillStyle = '#20a0c0'; for (let y = 44; y < h - 10; y += 12) g.fillRect(12, y, 40 + Math.random() * 60, 5);
 });
+// a soft round glow (lamps, motes)
+const glowTex = () => tex('glow', 64, 64, (g, w) => { const gr = g.createRadialGradient(32, 32, 0, 32, 32, 32); gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(0.25, 'rgba(255,255,255,0.55)'); gr.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = gr; g.fillRect(0, 0, w, w); });
 const arrowTex = (down) => tex('arrow' + down, 128, 128, (g, w) => {
   g.fillStyle = 'rgba(0,0,0,0)'; g.clearRect(0, 0, w, w); g.fillStyle = down ? '#80ffb0' : '#80c0ff'; g.shadowColor = g.fillStyle; g.shadowBlur = 14;
   g.beginPath(); if (down) { g.moveTo(64, 110); g.lineTo(20, 60); g.lineTo(46, 60); g.lineTo(46, 16); g.lineTo(82, 16); g.lineTo(82, 60); g.lineTo(108, 60); } else { g.moveTo(64, 16); g.lineTo(108, 66); g.lineTo(82, 66); g.lineTo(82, 110); g.lineTo(46, 110); g.lineTo(46, 66); g.lineTo(20, 66); } g.closePath(); g.fill();
@@ -64,7 +66,8 @@ const arrowTex = (down) => tex('arrow' + down, 128, 128, (g, w) => {
 // floor: { n, tiles }, opened: Set of "x,y" chests already opened, flags: { boss done, story seen }
 export function buildWorld(floor, lookName, state) {
   const L = lookOf(lookName), group = new THREE.Group(), n = floor.n, live = [];
-  const mat = (name, draw, rep) => new THREE.MeshStandardMaterial({ map: tex(lookName + name, 256, 256, draw, rep), roughness: 0.9 });
+  // the texture doubles as a bump map, so mortar, tiles and cracks catch the lamp light
+  const mat = (name, draw, rep) => { const t = tex(lookName + name, 256, 256, draw, rep); return new THREE.MeshStandardMaterial({ map: t, bumpMap: t, bumpScale: 0.035, roughness: 0.82, metalness: 0.05 }); };
   const wallMat = mat('wall', L.wall), floorMat = mat('floor', L.floor), ceilMat = mat('ceil', L.ceil);
   // walls: one box per wall tile that touches an open tile
   const walls = [];
@@ -79,6 +82,30 @@ export function buildWorld(floor, lookName, state) {
   const pg = new THREE.PlaneGeometry(n * TILE, n * TILE);
   const fl = new THREE.Mesh(pg, floorMat); fl.rotation.x = -Math.PI / 2; fl.position.set((n - 1) * TILE / 2, 0, (n - 1) * TILE / 2); floorMat.map.repeat.set(n, n); group.add(fl);
   const ce = new THREE.Mesh(pg, ceilMat); ce.rotation.x = Math.PI / 2; ce.position.set((n - 1) * TILE / 2, WALL_H, (n - 1) * TILE / 2); ceilMat.map.repeat.set(n, n); group.add(ce);
+  // lamps on the walls: a little fixture with a flickering glow (sprites, so they cost no real lights)
+  const fixtureMat = new THREE.MeshStandardMaterial({ color: '#2a2a2e', roughness: 0.5, metalness: 0.7 });
+  const bulbMat = new THREE.MeshStandardMaterial({ color: L.sconce, emissive: L.sconce, emissiveIntensity: 2.4 });
+  const open = (x, y) => floor.tiles[y] && floor.tiles[y][x] && floor.tiles[y][x] !== '#';
+  for (let y = 1; y < n - 1; y++) for (let x = 1; x < n - 1; x++) {
+    if (!open(x, y) || (x * 7 + y * 13) % 4) continue;
+    const side = [[0, -1], [1, 0], [0, 1], [-1, 0]].find(([dx, dy]) => !open(x + dx, y + dy)); if (!side) continue;
+    const [dx, dy] = side, px = x * TILE + dx * (TILE / 2 - 0.06), pz = y * TILE + dy * (TILE / 2 - 0.06);
+    const lampG = new THREE.Group(); lampG.position.set(px, 2.25, pz); lampG.rotation.y = Math.atan2(-dx, -dy);
+    if (L.lantern) { const paper = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, 0.42, 10), bulbMat); paper.position.z = 0.22; lampG.add(paper); }
+    else { const plate = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.5, 0.06), fixtureMat); lampG.add(plate); const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.1, 10, 8), bulbMat); bulb.position.z = 0.1; lampG.add(bulb); }
+    const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex(), color: L.sconce, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: 0.75 }));
+    halo.scale.set(2.2, 2.2, 1); halo.position.z = 0.2; lampG.add(halo);
+    const pool = new THREE.Mesh(new THREE.CircleGeometry(1.1, 24), new THREE.MeshBasicMaterial({ map: glowTex(), color: L.sconce, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: 0.22 }));
+    pool.rotation.x = -Math.PI / 2; pool.position.set(x * TILE + dx * 0.9, 0.02, y * TILE + dy * 0.9); group.add(pool);
+    group.add(lampG); live.push({ obj: halo, flick: Math.random() * 10, base: 0.95 });
+  }
+  // motes drifting in the air (dust, embers, fireflies, sparks)
+  const MN = 380, mpos = new Float32Array(MN * 3), seeds = new Float32Array(MN);
+  for (let i = 0; i < MN; i++) { mpos[i * 3] = Math.random() * n * TILE - TILE / 2; mpos[i * 3 + 1] = Math.random() * WALL_H; mpos[i * 3 + 2] = Math.random() * n * TILE - TILE / 2; seeds[i] = Math.random() * 100; }
+  const mgeo = new THREE.BufferGeometry(); mgeo.setAttribute('position', new THREE.BufferAttribute(mpos, 3));
+  const motes = new THREE.Points(mgeo, new THREE.PointsMaterial({ map: glowTex(), color: L.mote, size: 0.09, transparent: true, opacity: 0.8, depthWrite: false, blending: THREE.AdditiveBlending }));
+  group.add(motes);
+  let lastT = 0;
   // markers
   const markers = new Map(), at = (x, y) => new THREE.Vector3(x * TILE, 0, y * TILE);
   const glow = (col, inten = 2.2) => new THREE.MeshStandardMaterial({ color: col, emissive: col, emissiveIntensity: inten, roughness: 0.6 });
@@ -116,7 +143,19 @@ export function buildWorld(floor, lookName, state) {
     group, markers, look: L,
     openChest(x, y) { const m = markers.get(x + ',' + y); if (m && m.userData.lid) { m.userData.lid.rotation.x = -1.2; m.userData.lid.position.z = -0.3; m.userData.band.material.emissiveIntensity = 0.1; } },
     remove(x, y) { const m = markers.get(x + ',' + y); if (m) { group.remove(m); markers.delete(x + ',' + y); } },
-    update(t) { for (const L2 of live) { if (L2.spin) L2.obj.rotation.y = t * 1.5; if (L2.rot) L2.obj.rotation.z = t * L2.rot; if (L2.bob) L2.obj.position.y = (L2.bob === 2 ? 1.6 : 1.5) + Math.sin(t * 2) * 0.12; } },
+    update(t) {
+      for (const L2 of live) {
+        if (L2.spin) L2.obj.rotation.y = t * 1.5; if (L2.rot) L2.obj.rotation.z = t * L2.rot; if (L2.bob) L2.obj.position.y = (L2.bob === 2 ? 1.6 : 1.5) + Math.sin(t * 2) * 0.12;
+        if (L2.flick != null) L2.obj.material.opacity = L2.base * (0.82 + Math.sin(t * 9 + L2.flick) * 0.08 + Math.sin(t * 23 + L2.flick * 3) * 0.06 + (Math.sin(t * 1.3 + L2.flick) > 0.97 ? -0.4 : 0));
+      }
+      const dt = Math.min(0.1, t - lastT); lastT = t;
+      const a = mgeo.attributes.position.array, rise = L.rise ? 0.25 : 0.03;
+      for (let i = 0; i < MN; i++) {
+        a[i * 3] += Math.sin(t * 0.3 + seeds[i]) * 0.12 * dt; a[i * 3 + 2] += Math.cos(t * 0.27 + seeds[i]) * 0.12 * dt;
+        a[i * 3 + 1] += (rise + Math.sin(t + seeds[i]) * 0.05) * dt; if (a[i * 3 + 1] > WALL_H) a[i * 3 + 1] = 0.05;
+      }
+      mgeo.attributes.position.needsUpdate = true;
+    },
     dispose() { group.traverse((o) => { if (o.geometry) o.geometry.dispose(); }); },
   };
 }

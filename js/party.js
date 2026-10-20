@@ -1,5 +1,5 @@
 // DEMON COVENANT — units (the hero and demons): stats, levels, experience, skills, and demon fusion. No DOM.
-import { DEMONS, HERO, SKILLS, statsAt, fuseRace } from './data.js';
+import { DEMONS, HERO, SKILLS, EQUIPS, statsAt, fuseRace } from './data.js?v=4';
 
 let nextUid = 1;
 export const setUidFloor = (n) => { nextUid = Math.max(nextUid, n); };
@@ -12,25 +12,39 @@ const learned = (table, lv) => Object.entries(table).filter(([l]) => +l <= lv).s
 function applyStats(u, keepRatio = true) {
   const d = u.hero ? null : DEMONS[u.id], st = statsAt(u.hero ? HERO.build : d.build, u.lv);
   const hpR = keepRatio && u.maxhp ? u.hp / u.maxhp : 1, mpR = keepRatio && u.maxmp ? u.mp / u.maxmp : 1;
-  Object.assign(u, { st: st.st, ma: st.ma, vi: st.vi, ag: st.ag, lu: st.lu });
-  u.maxhp = Math.round(st.hp * (u.hero ? 1.25 : 1) * (d && d.boss ? d.hpX : 1)); u.maxmp = Math.round(st.mp * (u.hero ? 1.1 : 1) * (d && d.boss ? 2 : 1));
+  // equipment adds to the stats, gives attack / magic / defence, and raises HP and MP by a percentage
+  const gear = gearOf(u), sum = (k) => gear.reduce((n, x) => n + (x[k] || 0), 0);
+  Object.assign(u, { st: st.st + sum('st'), ma: st.ma + sum('ma'), vi: st.vi + sum('vi'), ag: st.ag + sum('ag'), lu: st.lu + sum('lu'), atk: sum('atk'), mag: sum('mag'), def: sum('def') });
+  u.maxhp = Math.round(st.hp * (u.hero ? 1.25 : 1) * (d && d.boss ? d.hpX : 1) * (1 + sum('hp') / 100)); u.maxmp = Math.round(st.mp * (u.hero ? 1.1 : 1) * (d && d.boss ? 2 : 1) * (1 + sum('mp') / 100));
   u.hp = u.hp === undefined ? u.maxhp : Math.max(u.hp > 0 ? 1 : 0, Math.round(u.maxhp * hpR));
   u.mp = u.mp === undefined ? u.maxmp : Math.round(u.maxmp * mpR);
 }
+// after changing equipment (or loading an old save)
+export const refreshStats = (u) => applyStats(u);
+export const gearOf = (u) => Object.values(u.eq || {}).map((k) => k && EQUIPS[k]).filter(Boolean);
+export const guards = (u, ail) => gearOf(u).some((x) => x.guard === 'all' || x.guard === ail);
 export function makeHero(name) {
-  const u = { uid: nextUid++, id: 'hero', hero: true, name, lv: 1, exp: 0, skills: learned(HERO.skills, 1), aff: {} };
+  const u = { uid: nextUid++, id: 'hero', hero: true, name, lv: 1, exp: 0, skills: learned(HERO.skills, 1), aff: {}, eq: { weapon: 'knife', armor: 'jacket', acc: null } };
   applyStats(u, false); return u;
 }
 export function makeDemon(id, lv) {
   const d = DEMONS[id]; lv = Math.max(1, lv || d.lv);
-  const u = { uid: nextUid++, id, lv, exp: expFor(lv), skills: d.boss ? Object.values(d.skills) : learned(d.skills, lv).slice(-6), aff: d.aff };
+  const u = { uid: nextUid++, id, lv, exp: expFor(lv), skills: d.boss ? Object.values(d.skills) : learned(d.skills, lv).slice(-6), aff: d.aff, eq: {} };
   if (!u.skills.length) u.skills = ['attack'];
   applyStats(u, false); return u;
 }
 // a demon as met in the wild: a level or two either side of its own
 export function makeEnemy(id, lv) { const u = makeDemon(id, lv); u.enemy = true; return u; }
 export const unitName = (u, en) => (u.hero ? u.name : DEMONS[u.id].name[en ? 1 : 0]);
-export const affOf = (u) => (u.hero ? HERO.aff : DEMONS[u.id].aff);
+// affinities: the demon's own, improved by an accessory (a resistance never turns into a weakness)
+const AFF_RANK = { w: 0, '': 1, s: 2, n: 3, r: 4, d: 5 };
+export function affOf(u) {
+  const base = u.hero ? HERO.aff : DEMONS[u.id].aff, acc = u.eq && u.eq.acc && EQUIPS[u.eq.acc];
+  if (!acc || !acc.aff) return base;
+  const out = { ...base };
+  for (const [el, a] of Object.entries(acc.affs)) if (AFF_RANK[a] > AFF_RANK[out[el] || '']) out[el] = a;
+  return out;
+}
 
 // experience: returns the level-ups, each with the skills learned
 export function gainExp(u, n) {
@@ -40,10 +54,15 @@ export function gainExp(u, n) {
     u.lv++;
     const before = u.maxhp; applyStats(u); u.hp = Math.min(u.maxhp, u.hp + (u.maxhp - before));
     const table = u.hero ? HERO.skills : DEMONS[u.id].skills, got = [];
-    for (const [l, s] of Object.entries(table)) if (+l === u.lv && !u.skills.includes(s)) { if (u.skills.length >= 8) u.skills.shift(); u.skills.push(s); got.push(s); }
+    for (const [l, s] of Object.entries(table)) if (+l === u.lv && !u.skills.includes(s)) { if (u.skills.length >= 8) u.skills.splice(replaced(u.skills, s), 1); u.skills.push(s); got.push(s); }
     ups.push({ lv: u.lv, learned: got });
   }
   return ups;
+}
+// a full list forgets a weaker skill of the same kind first (Lunge for God's Hand), otherwise the oldest
+function replaced(list, s) {
+  const n = SKILLS[s], i = list.findIndex((x) => { const o = SKILLS[x]; return o.kind === n.kind && o.el === n.el && o.target === n.target && (o.power || 0) <= (n.power || 0); });
+  return i < 0 ? 0 : i;
 }
 export function healFull(u) { u.hp = u.maxhp; u.mp = u.maxmp; }
 

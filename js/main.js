@@ -1,16 +1,16 @@
 // DEMON COVENANT — the game: exploring floors in first person, battles with press turns, talking to demons, fusion,
 // terminals, the story. Built on HUSH's renderer and sound.
 import * as THREE from 'three';
-import { DEMONS, SKILLS, ITEMS, SHOP, AREAS, FLOORS, RACES, EL_NAME, AFF_NAME, ELEMENTS } from './data.js';
-import { makeHero, makeDemon, gainExp, healFull, fusionResult, fuse, expFor, unitName, affOf, STOCK_MAX, ACTIVE_MAX, setUidFloor } from './party.js';
-import { createBattle, actor, useSkill, useItem, pass, tryEscape, consume, check, endTurnIfDone, enemyStep, rewards, alive, canUse, iconsLeft } from './battle.js';
-import { startTalk, prompt as talkPrompt, answer as talkAnswer } from './talk.js';
-import { buildFloor, DIRS } from './dungeon.js';
-import { encounter, bossFor } from './encounter.js';
-import { PROLOGUE, EVENTS, BOSS, ENDINGS, route } from './story.js';
-import { portrait } from './art.js';
-import { AudioEngine } from './audio.js';
-import { buildWorld, TILE } from './world3d.js';
+import { DEMONS, SKILLS, ITEMS, SHOP, AREAS, FLOORS, RACES, EL_NAME, AFF_NAME, ELEMENTS, EQUIPS, BOSS_DROP, AIL_NAME } from './data.js?v=4';
+import { makeHero, makeDemon, gainExp, healFull, fusionResult, fuse, expFor, unitName, affOf, STOCK_MAX, ACTIVE_MAX, setUidFloor, refreshStats } from './party.js?v=4';
+import { createBattle, actor, useSkill, useItem, pass, tryEscape, consume, check, endTurnIfDone, enemyStep, rewards, alive, canUse, iconsLeft, sleepTurn, resetFighter } from './battle.js?v=4';
+import { startTalk, prompt as talkPrompt, answer as talkAnswer } from './talk.js?v=4';
+import { buildFloor, DIRS } from './dungeon.js?v=4';
+import { encounter, bossFor } from './encounter.js?v=4';
+import { PROLOGUE, EVENTS, BOSS, ENDINGS, route } from './story.js?v=4';
+import { portrait } from './art.js?v=4';
+import { AudioEngine } from './audio.js?v=4';
+import { buildWorld, TILE } from './world3d.js?v=4';
 
 const $ = (id) => document.getElementById(id);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -108,9 +108,17 @@ function hud() {
 }
 function partyBars(cur) {
   const list = [S.hero, ...activeDemons()];
-  $('party').innerHTML = list.map((u) => `<div class="pm ${u === cur ? 'cur' : ''} ${alive(u) ? '' : 'dead'}" data-uid="${u.uid}"><b>${esc(nm(u))}</b><small>Lv${u.lv}</small>
+  $('party').innerHTML = list.map((u) => `<div class="pm ${u === cur ? 'cur' : ''} ${alive(u) ? '' : 'dead'}" data-uid="${u.uid}"><b>${esc(nm(u))}${statusTags(u)}</b><small>Lv${u.lv}</small>
     <div class="bar hp"><i style="width:${(u.hp / u.maxhp) * 100}%"></i></div><div class="nums">${u.hp}/${u.maxhp}</div>
     <div class="bar mp"><i style="width:${(u.mp / u.maxmp) * 100}%"></i></div><div class="nums">${u.mp}/${u.maxmp}</div></div>`).join('');
+}
+// little tags for ailments, walls and Charge
+function statusTags(u) {
+  let t = '';
+  if (u.ail) t += `<em class="tag ${u.ail}">${esc(T(AIL_NAME[u.ail]))}</em>`;
+  if (u.shield && (u.shield.phys || u.shield.mag)) t += `<em class="tag wall">${u.shield.phys && u.shield.mag ? '◈◈' : u.shield.phys ? L('物◈', 'P◈') : L('魔◈', 'M◈')}</em>`;
+  if (u.charge) t += `<em class="tag charge">${u.charge === 'phys' ? L('蓄', 'CHG') : L('集', 'FOC')}</em>`;
+  return t;
 }
 function reveal() {
   const st = mapState(S.floor), n = R.floor.n; let seen = st.seen.length === n * n ? st.seen.split('') : Array(n * n).fill('0');
@@ -213,8 +221,14 @@ function fadeIn() { setTimeout(() => $('fade').classList.remove('on'), 80); }
 async function openChest() {
   const st = mapState(S.floor); st.opened.push(R.x + ',' + R.y); R.world.openChest(R.x, R.y); audio.play('chest');
   const tier = S.floor, r = Math.random();
-  if (r < 0.45) { const n = Math.round((60 + tier * 60) * (0.7 + Math.random() * 0.6)); S.macca += n; await say([L(`寶箱裡有 ${n} 魔貨。`, `The chest holds ${n} macca.`)]); }
-  else { const pool = tier < 3 ? ['salve', 'salve', 'water', 'smoke', 'incense'] : tier < 7 ? ['salve2', 'water', 'incense', 'gem', 'salve2'] : ['jade', 'salve2', 'water', 'incense', 'gem']; const it = pool[Math.floor(Math.random() * pool.length)]; S.bag[it] = (S.bag[it] || 0) + 1; await say([L(`得到了「${ITEMS[it].name[0]}」！`, `Found: ${ITEMS[it].name[1]}!`)]); }
+  if (r < 0.4) { const n = Math.round((60 + tier * 60) * (0.7 + Math.random() * 0.6)); S.macca += n; await say([L(`寶箱裡有 ${n} 魔貨。`, `The chest holds ${n} macca.`)]); }
+  else if (r < 0.6) {
+    // a piece of equipment from this area or the next (the Killing Stone only in the Abyss)
+    const area = FLOORS[S.floor].area, pool = Object.keys(EQUIPS).filter((k) => (!EQUIPS[k].drop && EQUIPS[k].tier >= area - 1 && EQUIPS[k].tier <= area + 1) || (k === 'stone' && area >= 4));
+    const k = pool[Math.floor(Math.random() * pool.length)]; S.gear[k] = (S.gear[k] || 0) + 1;
+    await say([L(`得到了裝備「${EQUIPS[k].name[0]}」！（選單 → 裝備）`, `Found equipment: ${EQUIPS[k].name[1]}! (Menu → Equip)`)]);
+  }
+  else { const pool = tier < 3 ? ['salve', 'salve', 'water', 'smoke', 'incense', 'antidote', 'bell'] : tier < 7 ? ['salve2', 'water', 'incense', 'gem', 'salve2', 'panacea'] : ['jade', 'salve2', 'water', 'incense', 'gem', 'panacea']; const it = pool[Math.floor(Math.random() * pool.length)]; S.bag[it] = (S.bag[it] || 0) + 1; await say([L(`得到了「${ITEMS[it].name[0]}」！`, `Found: ${ITEMS[it].name[1]}!`)]); }
   save();
 }
 
@@ -247,12 +261,78 @@ async function terminal() {
 }
 async function shop() {
   for (;;) {
+    const c = await choose(`${L('商店', 'Shop')} <small>${S.macca} ${L('魔貨', 'macca')}</small>`, [{ label: L('道具', 'Items') }, { label: L('裝備', 'Equipment'), note: L('武器與防具給主角，飾品誰都能戴', 'Weapons and armour for the hero; anyone can wear an accessory') }, { label: L('賣出', 'Sell') }]);
+    if (c < 0) return;
+    if (c === 0) await shopItems(); else if (c === 1) await shopGear(); else await sellMenu();
+  }
+}
+async function shopItems() {
+  for (;;) {
     const list = SHOP.map((k) => ({ label: `${esc(T(ITEMS[k].name))} <small>×${S.bag[k] || 0}</small>`, right: `${ITEMS[k].price}`, disabled: S.macca < ITEMS[k].price, note: itemNote(k) }));
-    const i = await choose(`${L('商店', 'Shop')} <small>${S.macca} ${L('魔貨', 'macca')}</small>`, list); if (i < 0) return;
+    const i = await choose(`${L('道具', 'Items')} <small>${S.macca} ${L('魔貨', 'macca')}</small>`, list); if (i < 0) return;
     const k = SHOP[i]; S.macca -= ITEMS[k].price; S.bag[k] = (S.bag[k] || 0) + 1; audio.play('gold'); hud();
   }
 }
-const itemNote = (k) => { const it = ITEMS[k]; return it.use === 'heal' ? (it.amt >= 9999 ? L('一人體力全滿', 'Fully heals one') : L(`回復一人 ${it.amt} 體力`, `Heals one by ${it.amt} HP`)) : it.use === 'mp' ? L(`回復一人 ${it.amt} 魔力`, `Restores ${it.amt} MP to one`) : it.use === 'revive' ? L('讓倒下的同伴復活', 'Revives a fallen ally') : it.use === 'escape' ? L('一定能逃離戰鬥（頭目戰除外）', 'Always escapes a battle (not a boss)') : L('可以賣錢的寶石', 'A gem worth money'); };
+// what the shops of this area sell: everything of its tier and below
+async function shopGear() {
+  const area = FLOORS[S.floor].area, keys = Object.keys(EQUIPS).filter((k) => !EQUIPS[k].drop && EQUIPS[k].tier <= area).sort((a, b) => SLOT_ORDER[EQUIPS[a].slot] - SLOT_ORDER[EQUIPS[b].slot] || EQUIPS[a].price - EQUIPS[b].price);
+  for (;;) {
+    const list = keys.map((k) => { const e = EQUIPS[k], cur = e.slot !== 'acc' && S.hero.eq[e.slot]; return { label: `${esc(T(e.name))} <small>${esc(T(SLOT_NAME[e.slot]))}${owned(k) ? ` ×${owned(k)}` : ''}</small>`, right: `${e.price}`, disabled: S.macca < e.price, note: gearNote(k) + (cur ? `<br><small>${L('現在', 'Now')}: ${esc(T(EQUIPS[cur].name))} — ${gearNote(cur)}</small>` : '') }; });
+    const i = await choose(`${L('裝備', 'Equipment')} <small>${S.macca} ${L('魔貨', 'macca')}</small>`, list); if (i < 0) return;
+    const k = keys[i], e = EQUIPS[k]; S.macca -= e.price; S.gear[k] = (S.gear[k] || 0) + 1; audio.play('gold'); hud();
+    const who = e.slot === 'acc' ? [S.hero, ...S.stock] : [S.hero];
+    const j = await choose(L(`要讓誰裝備「${e.name[0]}」？`, `Who wears the ${e.name[1]}?`), [...who.map((u) => ({ label: esc(nm(u)), right: u.eq[e.slot] ? esc(T(EQUIPS[u.eq[e.slot]].name)) : '—' })), { label: L('先收著', 'Keep it for now') }]);
+    if (j >= 0 && j < who.length) { equip(who[j], e.slot, k); audio.play('ok'); toast(L(`${nm(who[j])}裝備了${e.name[0]}`, `${nm(who[j])} equips the ${e.name[1]}`)); }
+  }
+}
+// selling: items and spare equipment go for half their price (a Demon Crystal for all of it)
+async function sellMenu() {
+  for (;;) {
+    const rows = [...Object.keys(S.bag).filter((k) => S.bag[k] > 0).map((k) => ({ k, item: true, n: S.bag[k], name: ITEMS[k].name, price: k === 'gem' ? ITEMS[k].price : Math.floor(ITEMS[k].price / 2) })),
+      ...Object.keys(S.gear).filter((k) => S.gear[k] > 0).map((k) => ({ k, item: false, n: S.gear[k], name: EQUIPS[k].name, price: Math.floor((EQUIPS[k].price || 3000) / 2) }))];
+    if (!rows.length) { await say([L('沒有可以賣的東西。', 'You have nothing to sell.')]); return; }
+    const i = await choose(`${L('賣出', 'Sell')} <small>${S.macca} ${L('魔貨', 'macca')}</small>`, rows.map((r) => ({ label: `${esc(T(r.name))} <small>×${r.n}</small>`, right: `+${r.price}`, note: r.item ? itemNote(r.k) : gearNote(r.k) }))); if (i < 0) return;
+    const r = rows[i], box = r.item ? S.bag : S.gear; box[r.k]--; if (!box[r.k]) delete box[r.k]; S.macca += r.price; audio.play('gold'); hud();
+  }
+}
+const itemNote = (k) => { const it = ITEMS[k]; return it.use === 'heal' ? (it.amt >= 9999 ? L('一人體力全滿', 'Fully heals one') : L(`回復一人 ${it.amt} 體力`, `Heals one by ${it.amt} HP`)) : it.use === 'mp' ? L(`回復一人 ${it.amt} 魔力`, `Restores ${it.amt} MP to one`) : it.use === 'revive' ? L('讓倒下的同伴復活', 'Revives a fallen ally') : it.use === 'escape' ? L('一定能逃離戰鬥（頭目戰除外）', 'Always escapes a battle (not a boss)') : it.use === 'cure' ? (it.ail === 'all' ? L('治好一人的所有異常（戰鬥中）', 'Cures every ailment of one (in battle)') : L(`治好一人的${T(AIL_NAME[it.ail])}（戰鬥中）`, `Cures ${AIL_NAME[it.ail][1].toLowerCase()} (in battle)`)) : L('可以賣錢的寶石', 'A gem worth money'); };
+
+// ---------------------------------------------------------------- equipment
+const SLOT_NAME = { weapon: ['武器', 'Weapon'], armor: ['防具', 'Armour'], acc: ['飾品', 'Accessory'] }, SLOT_ORDER = { weapon: 0, armor: 1, acc: 2 };
+const owned = (k) => S.gear[k] || 0;
+const slotsOf = (u) => (u.hero ? ['weapon', 'armor', 'acc'] : ['acc']);
+function gearNote(k) {
+  const e = EQUIPS[k], p = [];
+  if (e.atk) p.push(L(`物攻 +${e.atk}`, `Atk +${e.atk}`)); if (e.mag) p.push(L(`魔攻 +${e.mag}`, `Mag +${e.mag}`)); if (e.def) p.push(L(`防禦 +${e.def}`, `Def +${e.def}`));
+  for (const [st, zh, en] of [['st', '力', 'St'], ['ma', '魔', 'Ma'], ['vi', '體', 'Vi'], ['ag', '速', 'Ag'], ['lu', '運', 'Lu']]) if (e[st]) p.push(L(`${zh} +${e[st]}`, `${en} +${e[st]}`));
+  if (e.hp) p.push(`HP +${e.hp}%`); if (e.mp) p.push(`MP +${e.mp}%`);
+  for (const [el, a] of Object.entries(e.affs)) p.push(L(`${T(EL_NAME[el])}${T(AFF_NAME[a])}`, `${T(AFF_NAME[a])} ${T(EL_NAME[el])}`));
+  if (e.guard) p.push(e.guard === 'all' ? L('防止中毒與睡眠', 'Wards off poison and sleep') : L(`防止${T(AIL_NAME[e.guard])}`, `Wards off ${AIL_NAME[e.guard][1].toLowerCase()}`));
+  return p.join(' · ');
+}
+// put on (or take off, id = null) a piece; the old one goes back into the bag
+function equip(u, slot, id) {
+  u.eq = u.eq || {}; const old = u.eq[slot];
+  if (old) S.gear[old] = (S.gear[old] || 0) + 1;
+  if (id) { S.gear[id]--; if (!S.gear[id]) delete S.gear[id]; }
+  u.eq[slot] = id || null; refreshStats(u);
+}
+async function equipMenu() {
+  for (;;) {
+    const all = [S.hero, ...S.stock];
+    const i = await choose(L('誰的裝備？', 'Whose equipment?'), all.map((u) => ({ label: `${esc(nm(u))} <small>Lv${u.lv}</small>`, right: slotsOf(u).map((sl) => (u.eq[sl] ? esc(T(EQUIPS[u.eq[sl]].name)) : '—')).join(' / ') }))); if (i < 0) return;
+    const u = all[i];
+    for (;;) {
+      const slots = slotsOf(u);
+      const j = await choose(`${esc(nm(u))} <small>${L('物攻', 'Atk')} ${u.atk} · ${L('魔攻', 'Mag')} ${u.mag} · ${L('防禦', 'Def')} ${u.def}</small>`, slots.map((sl) => ({ label: esc(T(SLOT_NAME[sl])), right: u.eq[sl] ? esc(T(EQUIPS[u.eq[sl]].name)) : '—', note: u.eq[sl] ? gearNote(u.eq[sl]) : L('（空）', '(empty)') }))); if (j < 0) break;
+      const slot = slots[j], have = Object.keys(S.gear).filter((k) => S.gear[k] > 0 && EQUIPS[k].slot === slot);
+      if (!have.length && !u.eq[slot]) { toast(L('沒有可以裝備的東西（到終端機的商店看看）', 'Nothing to wear (try a terminal shop)')); continue; }
+      const k = await choose(esc(T(SLOT_NAME[slot])), [{ label: L('（卸下）', '(Take off)'), disabled: !u.eq[slot] }, ...have.map((x) => ({ label: esc(T(EQUIPS[x].name)), right: `×${S.gear[x]}`, note: gearNote(x) }))]);
+      if (k < 0) continue;
+      equip(u, slot, k === 0 ? null : have[k - 1]); audio.play('ok'); hud(); save();
+    }
+  }
+}
 
 // ---------------------------------------------------------------- the party: who fights
 async function partyMenu() {
@@ -284,6 +364,7 @@ async function fusionAltar() {
       if (ok !== 0) continue;
       const out = fuse(A, B, S.hero.lv); if (!out.unit) continue;
       const wasActive = S.active.includes(A.uid) || S.active.includes(B.uid);
+      for (const u of [A, B]) if (u.eq && u.eq.acc) S.gear[u.eq.acc] = (S.gear[u.eq.acc] || 0) + 1;     // accessories come back
       S.stock = S.stock.filter((u) => u !== A && u !== B); S.active = S.active.filter((x) => x !== A.uid && x !== B.uid);
       S.stock.push(out.unit); if (wasActive || S.active.length < ACTIVE_MAX) S.active.push(out.unit.uid);
       audio.play('fuse'); flash('#ff4040');
@@ -299,10 +380,26 @@ function demonCard(u) {
   return `<div class="card"><canvas class="por"></canvas><div class="info"><h3>${esc(nm(u))} <small>${u.hero ? L('主角', 'Hero') : esc(T(RACES[d.race].name))} Lv${u.lv}</small></h3>
     <div class="stats">HP ${u.hp}/${u.maxhp} · MP ${u.mp}/${u.maxmp}<br>${L('力', 'St')} ${u.st} · ${L('魔', 'Ma')} ${u.ma} · ${L('體', 'Vi')} ${u.vi} · ${L('速', 'Ag')} ${u.ag} · ${L('運', 'Lu')} ${u.lu}</div>
     <div class="affs">${ELEMENTS.filter((e) => e !== 'almighty').map((e) => `<span class="aff ${aff[e] || ''}">${esc(T(EL_NAME[e]))}<b>${aff[e] ? esc(T(AFF_NAME[aff[e]])) : '－'}</b></span>`).join('')}</div>
-    <div class="skills">${u.skills.map((s) => `<span>${esc(T(SKILLS[s].name))}</span>`).join('')}</div>${u.hero ? '' : `<div class="exp">${L('下一級', 'Next')} ${Math.max(0, expFor(u.lv + 1) - u.exp)}</div>`}</div></div>`;
+    <div class="skills">${u.skills.map((s) => `<span title="${esc(skillNote(SKILLS[s]))}">${esc(T(SKILLS[s].name))}</span>`).join('')}</div>
+    <div class="gear">${slotsOf(u).map((sl) => `<span><i>${esc(T(SLOT_NAME[sl]))}</i>${u.eq && u.eq[sl] ? esc(T(EQUIPS[u.eq[sl]].name)) : '—'}</span>`).join('')}${u.hero ? `<span><i>${L('物攻/防', 'Atk/Def')}</i>${u.atk || 0} / ${u.def || 0}</span>` : ''}</div>
+    ${u.hero ? '' : `<div class="exp">${L('下一級', 'Next')} ${Math.max(0, expFor(u.lv + 1) - u.exp)}</div>`}</div></div>`;
 }
 function paintCard(d, u) { const c = d.querySelector('.por'); if (!c) return; c.width = c.height = 200; const g = c.getContext('2d'); if (u.hero) { g.fillStyle = '#1a2030'; g.fillRect(0, 0, 200, 200); heroPortrait(g); } else g.drawImage(portrait(DEMONS[u.id].art), 0, 0, 200, 200); }
-function heroPortrait(g) { g.fillStyle = '#20283a'; g.beginPath(); g.ellipse(100, 200, 70, 60, 0, Math.PI, 0); g.fill(); g.fillStyle = '#e8c8a8'; g.beginPath(); g.ellipse(100, 100, 34, 40, 0, 0, 7); g.fill(); g.fillStyle = '#1a1a22'; g.beginPath(); g.ellipse(100, 76, 38, 26, 0, Math.PI, 0); g.fill(); g.fillRect(64, 72, 12, 40); g.fillStyle = '#2a2a3a'; g.fillRect(84, 98, 10, 4); g.fillRect(106, 98, 10, 4); g.fillStyle = '#40e0ff'; g.fillRect(140, 130, 26, 40); g.fillStyle = '#0a1a2a'; g.fillRect(143, 134, 20, 30); }
+// the hero: a student in a dark coat, lit by the cyan screen of the summoning program on the arm
+function heroPortrait(g) {
+  const bg = g.createRadialGradient(100, 90, 10, 100, 100, 130); bg.addColorStop(0, '#24384a'); bg.addColorStop(1, '#070a10'); g.fillStyle = bg; g.fillRect(0, 0, 200, 200);
+  const coat = g.createLinearGradient(40, 140, 160, 200); coat.addColorStop(0, '#3a4660'); coat.addColorStop(1, '#10141e');
+  g.fillStyle = coat; g.beginPath(); g.moveTo(24, 200); g.quadraticCurveTo(30, 140, 100, 136); g.quadraticCurveTo(170, 140, 176, 200); g.fill();
+  g.fillStyle = '#c8d0e0'; g.beginPath(); g.moveTo(86, 140); g.lineTo(100, 172); g.lineTo(114, 140); g.fill(); g.fillStyle = '#a02030'; g.beginPath(); g.moveTo(96, 148); g.lineTo(100, 176); g.lineTo(104, 148); g.fill();
+  const skin = g.createRadialGradient(90, 92, 4, 100, 104, 44); skin.addColorStop(0, '#f6dcc4'); skin.addColorStop(1, '#b88a6a'); g.fillStyle = skin; g.beginPath(); g.ellipse(100, 104, 32, 38, 0, 0, 7); g.fill(); g.fillRect(90, 132, 20, 12);
+  g.fillStyle = '#14141c'; g.beginPath(); g.moveTo(64, 104); g.quadraticCurveTo(58, 58, 100, 56); g.quadraticCurveTo(146, 56, 138, 106); g.lineTo(130, 84); g.lineTo(116, 92); g.lineTo(104, 80); g.lineTo(88, 92); g.lineTo(74, 84); g.closePath(); g.fill();
+  g.strokeStyle = 'rgba(120,200,255,.35)'; g.lineWidth = 2; g.beginPath(); g.moveTo(82, 64); g.quadraticCurveTo(100, 58, 120, 64); g.stroke();
+  g.fillStyle = '#1a1a24'; g.fillRect(83, 102, 12, 5); g.fillRect(106, 102, 12, 5); g.fillStyle = '#5ad8ff'; g.fillRect(87, 103, 4, 3); g.fillRect(110, 103, 4, 3);
+  g.strokeStyle = '#8a5a4a'; g.lineWidth = 2; g.beginPath(); g.moveTo(94, 124); g.lineTo(106, 124); g.stroke();
+  g.save(); g.shadowColor = '#40e0ff'; g.shadowBlur = 18; g.fillStyle = '#40e0ff'; g.fillRect(138, 150, 30, 40); g.restore();
+  g.fillStyle = '#062030'; g.fillRect(141, 153, 24, 30); g.fillStyle = '#40e0ff'; for (let y = 157; y < 180; y += 6) g.fillRect(144, y, 8 + (y * 7) % 12, 2);
+  g.fillStyle = 'rgba(64,224,255,.18)'; g.beginPath(); g.ellipse(132, 120, 20, 40, -0.3, 0, 7); g.fill();
+}
 async function showDemon(u, title) {
   const d = openBox(`<div class="title">${title || ''}</div>${demonCard(u)}<div class="more">▼</div>`, 'cardbox'); paintCard(d, u);
   await new Promise((go) => { const fin = () => { modal = null; closeBox(d); go(); }; d.onclick = fin; modal = (k) => { if (k === 'ok' || k === 'back') fin(); }; });
@@ -314,15 +411,16 @@ async function mainMenu() {
   R.busy = true;
   try {
     for (;;) {
-      const i = await choose(L('選單', 'Menu'), [{ label: L('狀態', 'Status') }, { label: L('道具', 'Items') }, { label: L('技能', 'Skills') }, { label: L('隊伍', 'Party') }, { label: L('地圖', 'Map') }, { label: L('設定', 'Settings') }, { label: L('回到標題', 'Title screen') }]);
+      const i = await choose(L('選單', 'Menu'), [{ label: L('狀態', 'Status') }, { label: L('道具', 'Items') }, { label: L('技能', 'Skills') }, { label: L('裝備', 'Equip') }, { label: L('隊伍', 'Party') }, { label: L('地圖', 'Map') }, { label: L('設定', 'Settings') }, { label: L('回到標題', 'Title screen') }]);
       if (i < 0) return;
       if (i === 0) { for (;;) { const all = [S.hero, ...S.stock]; const j = await choose(L('誰的狀態？', 'Whose status?'), all.map((u) => ({ label: `${S.active.includes(u.uid) || u.hero ? '⚔ ' : '　'}${esc(nm(u))}`, right: `Lv${u.lv}` }))); if (j < 0) break; await showDemon(all[j]); } }
       if (i === 1) await fieldItems();
       if (i === 2) await fieldSkills();
-      if (i === 3) await partyMenu();
-      if (i === 4) { $('bigwrap').hidden = false; drawMap(true); await new Promise((go) => { const fin = () => { $('bigwrap').hidden = true; modal = null; $('bigwrap').onclick = null; go(); }; $('bigwrap').onclick = fin; modal = () => fin(); }); }
-      if (i === 5) await settings();
-      if (i === 6) { const k = await choose(L('回到標題？（沒記錄的進度會消失）', 'Back to the title? (Unsaved progress is lost)'), [{ label: L('是', 'Yes') }, { label: L('否', 'No') }]); if (k === 0) { titleScreen(); return; } }
+      if (i === 3) await equipMenu();
+      if (i === 4) await partyMenu();
+      if (i === 5) { $('bigwrap').hidden = false; drawMap(true); await new Promise((go) => { const fin = () => { $('bigwrap').hidden = true; modal = null; $('bigwrap').onclick = null; go(); }; $('bigwrap').onclick = fin; modal = () => fin(); }); }
+      if (i === 6) await settings();
+      if (i === 7) { const k = await choose(L('回到標題？（沒記錄的進度會消失）', 'Back to the title? (Unsaved progress is lost)'), [{ label: L('是', 'Yes') }, { label: L('否', 'No') }]); if (k === 0) { titleScreen(); return; } }
     }
   } finally { R.busy = false; hud(); }
 }
@@ -384,17 +482,19 @@ async function battle(foes, opts) {
   const party = [S.hero, ...activeDemons()];
   const B = createBattle(party, foes, { moon: moon(), ambush: !opts.boss && Math.random() < 0.08 });
   BT = { B, foes, boss: !!opts.boss, popups: [] };
+  if (B.tick.length) B.tick = [];
   $('battle').hidden = false; drawBattle();
   await say([foes.length > 1 ? L(`${foes.map(nm).join('、')}出現了！`, `${foes.map(nm).join(', ')} appear!`) : L(`${nm(foes[0])}出現了！`, `${nm(foes[0])} appears!`), ...(B.side === 1 ? [L('被偷襲了！', 'An ambush!')] : [])]);
   let lastSide = B.side;
   while (!B.over) {
     drawBattle();
-    if (B.side !== lastSide) { lastSide = B.side; banner(B.side === 0 ? L('我方回合', 'Your turn') : L('敵方回合', 'Enemy turn')); await sleep(550); }
+    if (B.side !== lastSide) { lastSide = B.side; banner(B.side === 0 ? L('我方回合', 'Your turn') : L('敵方回合', 'Enemy turn')); await sleep(550); if (B.tick.length) { const tk = B.tick; B.tick = []; await showEvents(tk); } }
     if (B.side === 0) { const a = actor(B); if (!a) { B.over = 'lose'; break; } await playerTurn(a); }
     else { await sleep(380); const res = enemyStep(B); if (res) await showEvents(res.ev, res.actor, res.skill); }
     if (!B.over) endTurnIfDone(B);
   }
   drawBattle();
+  for (const u of [S.hero, ...S.stock]) resetFighter(u);       // ailments, walls and Charge end with the battle
   const result = B.over;
   if (result === 'win') await victory(B);
   $('battle').hidden = true; BT = null;
@@ -408,7 +508,7 @@ function drawBattle() {
   $('foes').innerHTML = B.sides[1].map((u, i) => {
     if (u.left) return '';
     const k = known(u.id), seen = Object.entries(k).map(([el, a]) => `<span class="aff ${a}">${esc(T(EL_NAME[el]))}${esc(T(AFF_NAME[a] || ['普', 'Norm']))}</span>`).join('');
-    return `<div class="foe ${alive(u) ? '' : 'gone'} ${DEMONS[u.id].boss ? 'boss' : ''}" data-i="${i}"><canvas width="256" height="256"></canvas><div class="fn">${esc(nm(u))} <small>Lv${u.lv}</small></div><div class="bar hp"><i style="width:${u.hp / u.maxhp * 100}%"></i></div><div class="known">${seen}</div></div>`;
+    return `<div class="foe ${alive(u) ? '' : 'gone'} ${DEMONS[u.id].boss ? 'boss' : ''}" data-i="${i}"><canvas width="256" height="256"></canvas><div class="fn">${esc(nm(u))} <small>Lv${u.lv}</small>${statusTags(u)}</div><div class="bar hp"><i style="width:${u.hp / u.maxhp * 100}%"></i></div><div class="known">${seen}</div></div>`;
   }).join('');
   $('foes').querySelectorAll('.foe').forEach((el) => { const u = B.sides[1][+el.dataset.i]; el.querySelector('canvas').getContext('2d').drawImage(portrait(DEMONS[u.id].art), 0, 0); });
   const I = B.icons;
@@ -424,6 +524,8 @@ async function pickTarget(B, kind) {
 }
 async function playerTurn(a) {
   const B = BT.B;
+  const sl = sleepTurn(B, a);
+  if (sl) { await showEvents(sl.ev, a); if (!sl.woke) return; }
   for (;;) {
     drawBattle();
     const cmds = [['attack', L('攻擊', 'Attack')], ['skill', L('技能', 'Skills')], ['item', L('道具', 'Items')]];
@@ -444,6 +546,7 @@ async function playerTurn(a) {
       const keys = Object.keys(S.bag).filter((k) => ITEMS[k].use && S.bag[k] > 0);
       const j = await choose(L('道具', 'Items'), keys.map((k) => ({ label: esc(T(ITEMS[k].name)), right: `×${S.bag[k]}`, disabled: ITEMS[k].use === 'escape' && BT.boss, note: itemNote(k) })), { cls: 'cmd' }); if (j < 0) continue;
       const k = keys[j], it = ITEMS[k]; let t = a;
+      if (it.use === 'cure' && !B.sides[0].some((u) => alive(u) && u.ail)) { toast(L('沒有人陷入異常', 'Nobody has an ailment')); continue; }
       if (it.target === 'ally' || it.target === 'dead') { t = await pickTarget(B, it.target === 'dead' ? 'dead' : 'ally'); if (!t) continue; }
       const res = useItem(B, a, k, t, S.bag); await showEvents(res.ev, a, null, T(it.name)); return;
     }
@@ -454,8 +557,16 @@ async function playerTurn(a) {
   }
 }
 const skillNote = (sk) => {
-  const tgt = { one: L('敵方一體', 'one foe'), all: L('敵方全體', 'all foes'), multi: L('敵方隨機 2-4 次', '2-4 random hits'), ally: L('我方一人', 'one ally'), party: L('我方全體', 'all allies'), dead: L('倒下的同伴', 'a fallen ally') }[sk.target];
-  const what = sk.kind === 'atk' ? L(`${T(EL_NAME[sk.el])}屬性攻擊 威力${sk.power}`, `${T(EL_NAME[sk.el])} attack, power ${sk.power}`) : sk.kind === 'heal' ? (sk.power >= 999 ? L('體力全滿', 'full HP') : L(`回復 ${sk.power}+`, `heals ${sk.power}+`)) : sk.kind === 'revive' ? L('復活', 'revives') : sk.kind === 'buff' ? (sk.stat === 'atk' ? L('攻擊力提升', 'attack up') : L('防禦力提升', 'defence up')) : (sk.stat === 'atk' ? L('敵攻擊力下降', 'foe attack down') : L('敵防禦力下降', 'foe defence down'));
+  const tgt = { one: L('敵方一體', 'one foe'), all: L('敵方全體', 'all foes'), multi: L('敵方隨機 2-4 次', '2-4 random hits'), ally: L('我方一人', 'one ally'), party: L('我方全體', 'all allies'), dead: L('倒下的同伴', 'a fallen ally'), self: L('自己', 'self') }[sk.target];
+  const ail = sk.ail && T(AIL_NAME[sk.ail]);
+  const what = sk.kind === 'atk' ? L(`${T(EL_NAME[sk.el])}屬性攻擊 威力${sk.power}`, `${T(EL_NAME[sk.el])} attack, power ${sk.power}`) + (sk.drain ? L('，吸收體力', ', drains HP') : '') + (sk.mpdrain ? L('，吸收魔力', ', drains MP') : '') + (sk.ail ? L(`，可能${ail}`, `, may ${sk.ail === 'poison' ? 'poison' : 'put to sleep'}`) : '')
+    : sk.kind === 'heal' ? (sk.power >= 999 ? L('體力全滿', 'full HP') : L(`回復 ${sk.power}+`, `heals ${sk.power}+`)) : sk.kind === 'revive' ? L('復活', 'revives')
+    : sk.kind === 'charge' ? (sk.stat === 'phys' ? L('下一次物理攻擊 2.5 倍', 'next physical attack ×2.5') : L('下一次魔法攻擊 2.5 倍', 'next magic attack ×2.5'))
+    : sk.kind === 'shield' ? (sk.stat === 'phys' ? L('反彈下一次物理攻擊', 'reflects the next physical attack') : L('反彈下一次魔法攻擊', 'reflects the next magic attack'))
+    : sk.kind === 'dispel' ? L('消除敵方的強化、反射壁與蓄力', 'removes foes\' boosts, walls and Charge')
+    : sk.kind === 'cleanse' ? L('消除我方的弱化與異常', 'removes your debuffs and ailments')
+    : sk.kind === 'ail' ? L(`使敵人${ail}（${Math.round(sk.chance * 100)}%）`, `${sk.ail === 'poison' ? 'poisons' : 'puts to sleep'} (${Math.round(sk.chance * 100)}%)`)
+    : sk.kind === 'buff' ? (sk.stat === 'atk' ? L('攻擊力提升', 'attack up') : L('防禦力提升', 'defence up')) : (sk.stat === 'atk' ? L('敵攻擊力下降', 'foe attack down') : L('敵防禦力下降', 'foe defence down'));
   return `${what} · ${tgt}`;
 };
 // summon: swap a demon from the stock into the fight (uses the hero's action)
@@ -468,7 +579,7 @@ async function summon(B, hero) {
     const j = await choose(L('換下誰？', 'Who returns?'), fighting.map((x) => ({ label: esc(nm(x)), right: `${x.hp}/${x.maxhp}` })), { cls: 'cmd' }); if (j < 0) return false;
     const out = fighting[j]; S.active = S.active.filter((x) => x !== out.uid); B.sides[0].splice(B.sides[0].indexOf(out), 1);
   }
-  S.active.push(u.uid); u.buff = { atk: 0, def: 0 }; B.sides[0].push(u);
+  S.active.push(u.uid); resetFighter(u); B.sides[0].push(u);
   audio.play('join'); consume(B, 'normal'); B.next++; check(B);
   await say([L(`召喚了${nm(u)}！`, `${nm(u)} is summoned!`)]);
   return true;
@@ -517,7 +628,7 @@ async function showEvents(ev, a, skill, label) {
   const B = BT.B, sk = skill && SKILLS[skill];
   if (sk && skill !== 'attack') { banner(T(sk.name)); }
   else if (label) banner(label);
-  if (sk) audio.play(sk.kind === 'heal' || sk.kind === 'revive' ? 'healfx' : sk.kind === 'buff' ? 'buff' : sk.kind === 'debuff' ? 'debuff' : sk.el === 'phys' ? 'slash' : sk.el === 'almighty' ? 'almighty' : sk.el);
+  if (sk) audio.play(sk.kind === 'heal' || sk.kind === 'revive' || sk.kind === 'cleanse' ? 'healfx' : ['buff', 'charge', 'shield'].includes(sk.kind) ? 'buff' : ['debuff', 'dispel', 'ail'].includes(sk.kind) ? 'debuff' : sk.el === 'phys' ? 'slash' : sk.el === 'almighty' ? 'almighty' : sk.el);
   if (sk && sk.kind === 'atk' && sk.el !== 'phys') flash({ fire: '#ff6020', ice: '#80d0ff', elec: '#ffff60', force: '#a0ffa0', light: '#ffffe0', dark: '#8020a0', almighty: '#ffffff' }[sk.el] || '#fff');
   for (const e of ev) {
     const t = e.t, foe = t && B.sides[1].includes(t), el = foe ? $('foes').querySelector(`.foe[data-i="${B.sides[1].indexOf(t)}"]`) : $('party').querySelector(`.pm[data-uid="${t && t.uid}"]`);
@@ -529,16 +640,26 @@ async function showEvents(ev, a, skill, label) {
       if (e.dead) { audio.play('down'); }
     } else if (e.kind === 'miss') { pop(el, L('MISS', 'MISS'), 'miss'); audio.play('miss'); }
     else if (e.kind === 'null') { if (foe && sk) known(t.id)[sk.el] = 'n'; pop(el, L('無效', 'NULL'), 'miss'); audio.play('null'); }
-    else if (e.kind === 'repel') { if (foe && sk) known(t.id)[sk.el] = 'r'; pop(el, L('反射', 'REPEL'), 'miss'); audio.play('null'); }
+    else if (e.kind === 'repel') { if (foe && sk && !e.wall) known(t.id)[sk.el] = 'r'; pop(el, e.wall ? L('反射壁！', 'WALL!') : L('反射', 'REPEL'), 'miss'); audio.play('null'); }
     else if (e.kind === 'drain') { if (foe && sk) known(t.id)[sk.el] = 'd'; pop(el, L('吸收', 'DRAIN'), 'heal'); audio.play('null'); }
     else if (e.kind === 'heal' || e.kind === 'mp') pop(el, '+' + e.n, 'heal');
     else if (e.kind === 'revive') pop(el, L('復活', 'REVIVED'), 'heal');
     else if (e.kind === 'buff' || e.kind === 'debuff') pop(el, (e.kind === 'buff' ? '▲' : '▼') + (e.stat === 'atk' ? L('攻', 'ATK') : L('防', 'DEF')), e.kind === 'buff' ? 'heal' : 'weak');
+    else if (e.kind === 'ail') { pop(el, T(AIL_NAME[e.ail]), e.ail, e.ail === 'sleep' ? 'Zzz' : ''); audio.play('debuff'); }
+    else if (e.kind === 'ailfail') pop(el, L('沒有效果', 'NO EFFECT'), 'miss');
+    else if (e.kind === 'sleeping') { banner(L(`${nm(t)}正在睡覺……`, `${nm(t)} is asleep…`)); pop(el, 'Zzz', 'sleep'); }
+    else if (e.kind === 'wake') pop(el, L('醒了！', 'AWAKE!'), 'heal');
+    else if (e.kind === 'poison') pop(el, e.dmg, 'poison', L('中毒', 'POISON'));
+    else if (e.kind === 'charge') pop(el, e.stat === 'phys' ? L('蓄力！', 'CHARGED!') : L('集中！', 'FOCUSED!'), 'crit');
+    else if (e.kind === 'shield') pop(el, e.stat === 'phys' ? L('物理反射壁', 'PHYS WALL') : L('魔法反射壁', 'MAGIC WALL'), 'heal');
+    else if (e.kind === 'dispel') pop(el, L('消除', 'DISPEL'), 'weak');
+    else if (e.kind === 'cleanse') pop(el, L('淨化', 'CLEANSED'), 'heal');
     else if (e.kind === 'pass') { banner(L('跳過', 'Pass')); }
     else if (e.kind === 'escape') audio.play('stairs');
     else if (e.kind === 'fail') { banner(L('逃不掉！', 'Couldn\'t escape!')); audio.play('cancel'); }
     else if (e.kind === 'noescape') { banner(L('無法從頭目戰中逃跑！', 'There is no escaping a boss!')); audio.play('cancel'); }
-    drawBattleSoft(); await sleep(260);
+    if (['ail', 'shield', 'charge', 'dispel', 'cleanse', 'wake', 'poison', 'sleeping'].includes(e.kind)) drawBattle(); else drawBattleSoft();
+    await sleep(260);
   }
   drawBattle(); await sleep(250);
 }
@@ -560,6 +681,8 @@ async function victory(B) {
   if (rw.exp) for (const u of B.sides[0]) if (alive(u)) for (const up of gainExp(u, rw.exp)) { lines.push(L(`${nm(u)}升到了 ${up.lv} 級！`, `${nm(u)} reaches level ${up.lv}!`)); for (const s of up.learned) lines.push(L(`${nm(u)}學會了「${SKILLS[s].name[0]}」！`, `${nm(u)} learns ${SKILLS[s].name[1]}!`)); }
   if (lines.length > 1) audio.play('levelup');
   if (rw.exp && Math.random() < 0.18) { const it = S.floor < 4 ? 'salve' : 'salve2'; S.bag[it] = (S.bag[it] || 0) + 1; lines.push(L(`得到了「${ITEMS[it].name[0]}」。`, `Found ${ITEMS[it].name[1]}.`)); }
+  // bosses leave something behind
+  if (BT.boss) for (const u of B.sides[1]) { const k = BOSS_DROP[u.id]; if (k) { S.gear[k] = (S.gear[k] || 0) + 1; lines.push(L(`${nm(u)}留下了「${EQUIPS[k].name[0]}」！（選單 → 裝備）`, `${nm(u)} leaves behind the ${EQUIPS[k].name[1]}! (Menu → Equip)`)); } }
   partyBars(); await say(lines);
 }
 async function gameOver() {
@@ -589,7 +712,7 @@ function titleScreen() {
 async function newGame() {
   audio.start(); $('title').hidden = true;
   const name = await askName();
-  S = { v: 1, seed: Math.floor(Math.random() * 1e9), name, hero: makeHero(name), stock: [], active: [], macca: 300, bag: { salve: 3, water: 1 }, align: 0, floor: 0, steps: 0, maps: {}, known: {}, music: 0.5 };
+  S = { v: 1, seed: Math.floor(Math.random() * 1e9), name, hero: makeHero(name), stock: [], active: [], macca: 300, bag: { salve: 3, water: 1, antidote: 1 }, gear: {}, align: 0, floor: 0, steps: 0, maps: {}, known: {}, music: 0.5 };
   R.mode = 'story'; await say(PROLOGUE);
   const pixie = makeDemon('pixie'); S.stock.push(pixie); S.active.push(pixie.uid);
   await showDemon(pixie, L('ORACLE 送來了一隻惡魔。', 'ORACLE sends you a demon.'));
@@ -608,6 +731,9 @@ function askName() {
 function loadGame() {
   const d = loadSave(); if (!d) return titleScreen();
   audio.start(); S = d; S.known = S.known || {};
+  // saves from before equipment: give the hero the starting gear and bring every stat up to date
+  S.gear = S.gear || {}; S.hero.eq = S.hero.eq || { weapon: 'knife', armor: 'jacket', acc: null };
+  for (const u of [S.hero, ...S.stock]) { u.eq = u.eq || {}; resetFighter(u); refreshStats(u); }
   setUidFloor(1 + Math.max(S.hero.uid, ...S.stock.map((u) => u.uid)));
   $('title').hidden = true; startPlay(); enterFloor(S.floor, S.pos); audio.setMusicVolume(S.music ?? 0.5);
   banner(T(AREAS[FLOORS[S.floor].area].name), `${FLOORS[S.floor].floor}F`);
