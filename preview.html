@@ -1,0 +1,28 @@
+<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>魔都轉生 · 美術風格預覽</title>
+<body style="margin:0;background:#0c0a10;color:#d8cfe0;font:14px sans-serif">
+<div style="padding:12px 16px 0;max-width:900px">
+  <h2 style="margin:0 0 6px;font-weight:600">新的美術風格試作</h2>
+  <p style="margin:0;line-height:1.6;color:#a89cb4">左：目前的畫法　右：新的「魔典」畫法（細墨線、硬邊陰影加噴槍、低彩度配一個發光的重點色、背後的法陣）。<br>
+  這六隻是原創的試作：取經典 RPG 的怪物原型（史萊姆、骷髏、空鎧甲、寶箱怪……）和民間傳說（牛頭），用黑暗神秘學圖鑑的風格重新設計。</p>
+</div>
+<div id="g" style="display:flex;flex-wrap:wrap;gap:14px;padding:14px 16px"></div>
+<script type="module">
+import { plate } from './js/grimoire.js?v=1';
+import { portrait } from './js/art.js';
+const L = [
+  ['ooze', '#4a5a2a', '#a8c870', '#c8ff40', '腐泥 Ooze', ['blob', '#5ab84a', '#c0f0a0', '#1a2a10']],
+  ['lampmoth', '#2a2230', '#b8a888', '#ffc860', '燈蛾夫人 Lady Lampmoth', ['fairy', '#7fd0ff', '#f0f8ff', '#ffffff']],
+  ['lantern', '#3a3046', '#6a2a2a', '#80ffd0', '提燈骸 Lantern Bones', ['wisp', '#a080ff', '#f0e0ff', '#ffffff']],
+  ['hollowmail', '#6a6a78', '#b89040', '#c060ff', '空鎧 Hollow Mail', ['knight', '#5a3a2a', '#c84a2a', '#ffffff', ['horns']]],
+  ['mimic', '#7a4a2a', '#b8a060', '#ff5030', '噬寶箱 Gnashing Chest', ['blob', '#8a6a3a', '#d8b060', '#ff4020']],
+  ['oxhead', '#5a3a2a', '#8a4a3a', '#ff6020', '牛頭獄卒 Ox-Head Jailer', ['ogre', '#6a3a2a', '#e0d0b0', '#ff3020', ['horns']]],
+];
+for (const [k, a, b, e, name, prev] of L) {
+  const d = document.createElement('div'); d.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:6px';
+  const row = document.createElement('div'); row.style.cssText = 'display:flex;gap:6px;align-items:flex-end;flex-wrap:wrap;justify-content:center';
+  const o = portrait(prev); o.style.cssText = 'width:150px;max-width:40vw;opacity:.85'; row.appendChild(o);
+  const c = plate([k, a, b, e]); c.style.cssText = 'width:256px;max-width:56vw'; row.appendChild(c);
+  d.appendChild(row); d.append(name); document.getElementById('g').appendChild(d);
+}
+</script>
