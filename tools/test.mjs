@@ -1,12 +1,12 @@
 // node tools/test.mjs [sim runs] — checks the data, the maps, the press-turn rules and negotiation, then plays the whole game
 // on autopilot to see how hard each floor and boss is.
-import { SKILLS, DEMONS, DEMON_ORDER, AREAS, FLOORS, RACE_ORDER, fuseRace, ITEMS, EQUIPS, BOSS_DROP, SHOP, HERO } from '../js/data.js?v=6';
-import { makeHero, makeDemon, gainExp, fuse, fusionResult, healFull, expFor, refreshStats, affOf } from '../js/party.js?v=6';
-import { createBattle, useSkill, useItem, actor, consume, iconsLeft, endTurnIfDone, enemyStep, enemyAction, rewards, alive, canUse, sleepTurn, startSide } from '../js/battle.js?v=6';
-import { startTalk, prompt, answer } from '../js/talk.js?v=6';
-import { buildFloor, bfs } from '../js/dungeon.js?v=6';
-import { encounter, bossFor, FLOOR_CAP } from '../js/encounter.js?v=6';
-import { EVENTS, BOSS, route } from '../js/story.js?v=6';
+import { SKILLS, DEMONS, DEMON_ORDER, AREAS, FLOORS, RACE_ORDER, fuseRace, ITEMS, EQUIPS, BOSS_DROP, SHOP, HERO } from '../js/data.js?v=7';
+import { makeHero, makeDemon, gainExp, fuse, fusionResult, healFull, expFor, refreshStats, affOf } from '../js/party.js?v=7';
+import { createBattle, useSkill, useItem, actor, consume, iconsLeft, endTurnIfDone, enemyStep, enemyAction, rewards, alive, canUse, sleepTurn, startSide } from '../js/battle.js?v=7';
+import { startTalk, prompt, answer } from '../js/talk.js?v=7';
+import { buildFloor, bfs } from '../js/dungeon.js?v=7';
+import { encounter, bossFor, FLOOR_CAP } from '../js/encounter.js?v=7';
+import { EVENTS, BOSS, route } from '../js/story.js?v=7';
 
 let fails = 0;
 const ok = (name, cond, extra = '') => { console.log((cond ? 'ok   ' : 'FAIL ') + name + (extra ? '  ' + extra : '')); if (!cond) fails++; };

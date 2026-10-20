@@ -1,16 +1,16 @@
 // DEMON COVENANT — the game: exploring floors in first person, battles with press turns, talking to demons, fusion,
 // terminals, the story. Built on HUSH's renderer and sound.
 import * as THREE from 'three';
-import { DEMONS, SKILLS, ITEMS, SHOP, AREAS, FLOORS, RACES, EL_NAME, AFF_NAME, ELEMENTS, EQUIPS, BOSS_DROP, AIL_NAME, DIFFS } from './data.js?v=6';
-import { makeHero, makeDemon, gainExp, healFull, fusionResult, fuse, expFor, unitName, affOf, STOCK_MAX, ACTIVE_MAX, setUidFloor, refreshStats } from './party.js?v=6';
-import { createBattle, actor, useSkill, useItem, pass, tryEscape, consume, check, endTurnIfDone, enemyStep, rewards, alive, canUse, iconsLeft, sleepTurn, resetFighter } from './battle.js?v=6';
-import { startTalk, prompt as talkPrompt, answer as talkAnswer } from './talk.js?v=6';
-import { buildFloor, DIRS } from './dungeon.js?v=6';
-import { encounter, bossFor } from './encounter.js?v=6';
-import { PROLOGUE, EVENTS, BOSS, ENDINGS, route } from './story.js?v=6';
-import { portrait } from './art.js?v=6';
-import { AudioEngine } from './audio.js?v=6';
-import { buildWorld, TILE } from './world3d.js?v=6';
+import { DEMONS, SKILLS, ITEMS, SHOP, AREAS, FLOORS, RACES, EL_NAME, AFF_NAME, ELEMENTS, EQUIPS, BOSS_DROP, AIL_NAME, DIFFS } from './data.js?v=7';
+import { makeHero, makeDemon, gainExp, healFull, fusionResult, fuse, expFor, unitName, affOf, STOCK_MAX, ACTIVE_MAX, setUidFloor, refreshStats } from './party.js?v=7';
+import { createBattle, actor, useSkill, useItem, pass, tryEscape, consume, check, endTurnIfDone, enemyStep, rewards, alive, canUse, iconsLeft, sleepTurn, resetFighter } from './battle.js?v=7';
+import { startTalk, prompt as talkPrompt, answer as talkAnswer } from './talk.js?v=7';
+import { buildFloor, DIRS } from './dungeon.js?v=7';
+import { encounter, bossFor } from './encounter.js?v=7';
+import { PROLOGUE, EVENTS, BOSS, ENDINGS, route } from './story.js?v=7';
+import { portrait } from './art.js?v=7';
+import { AudioEngine } from './audio.js?v=7';
+import { buildWorld, TILE } from './world3d.js?v=7';
 
 const $ = (id) => document.getElementById(id);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));

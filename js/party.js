@@ -1,5 +1,5 @@
 // DEMON COVENANT — units (the hero and demons): stats, levels, experience, skills, and demon fusion. No DOM.
-import { DEMONS, HERO, SKILLS, EQUIPS, statsAt, fuseRace } from './data.js?v=6';
+import { DEMONS, HERO, SKILLS, EQUIPS, statsAt, fuseRace } from './data.js?v=7';
 
 let nextUid = 1;
 export const setUidFloor = (n) => { nextUid = Math.max(nextUid, n); };

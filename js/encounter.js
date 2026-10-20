@@ -1,6 +1,6 @@
 // DEMON COVENANT — who you meet on each floor. No DOM.
-import { AREAS, FLOORS, DEMONS } from './data.js?v=6';
-import { makeEnemy } from './party.js?v=6';
+import { AREAS, FLOORS, DEMONS } from './data.js?v=7';
+import { makeEnemy } from './party.js?v=7';
 
 // the strongest demon that can turn up on each floor (the area's list, filtered by this cap)
 export const FLOOR_CAP = [3, 7, 11, 15, 19, 23, 27, 31, 34, 37, 40];

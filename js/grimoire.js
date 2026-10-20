@@ -264,15 +264,17 @@ const P = {
 const FIT = { lantern: [0, 0, 0.9], hollowmail: [0, 0, 0.95] };
 // a demon's plate as a 256×256 canvas. art = [plate, main colour, second colour, accent colour]
 export function plate(art, bare = false) {
-  const key = (bare ? 'b:' : 'g:') + art.join();
+  const key = (bare ? 'b:' : 'g:') + JSON.stringify(art);
   if (cache.has(key)) return cache.get(key);
   const c = document.createElement('canvas'); c.width = c.height = 256; G = c.getContext('2d');
   ground(art[3], bare);
-  const fit = FIT[art[0]];
+  const fit = (art[4] && art[4].fit) || FIT[art[0]];
   G.save(); if (fit) { G.translate(128, 244); G.scale(fit[2], fit[2]); G.translate(-128 + fit[0], -244 + fit[1]); }
-  (P[art[0]] || P.ooze)(art[1], art[2], art[3]);
+  (P[art[0]] || P.ooze)(art[1], art[2], art[3], art[4] && !Array.isArray(art[4]) ? art[4] : {});
   G.restore();
   grain([...key].reduce((n, ch) => (n * 31 + ch.charCodeAt(0)) % 2147483647, 7) || 7, bare);
   cache.set(key, c); return c;
 }
-export const PLATES = Object.keys(P);
+export const PLATES = { includes: (k) => k in P };
+// the tools the other plate books (bestiary.js) draw with
+export { P, FIT, G, cel, brush, smooth, poly, ell, limbP, glow, eyeSlit, teeth, hatch, tone, css, hx, INK, SKIN };

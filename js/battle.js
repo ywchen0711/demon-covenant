@@ -8,8 +8,8 @@
 // the next attack of its kind back on the attacker; Dekaja clears the foes' boosts and walls, Dekunda the party's
 // debuffs and ailments. Poison takes a little health at the start of each of its side's turns; a sleeper skips turns
 // until it wakes (or is hit, which hurts more). Ailments end with the battle.
-import { SKILLS, ITEMS, DEMONS, DIFFS } from './data.js?v=6';
-import { affOf, guards } from './party.js?v=6';
+import { SKILLS, ITEMS, DEMONS, DIFFS } from './data.js?v=7';
+import { affOf, guards } from './party.js?v=7';
 
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 export const alive = (u) => u.hp > 0;
