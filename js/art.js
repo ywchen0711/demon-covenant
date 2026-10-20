@@ -1,4 +1,4 @@
-import { plate, PLATES } from './grimoire.js?v=5';
+import { plate, PLATES } from './grimoire.js?v=6';
 // DEMON COVENANT — demon portraits, drawn in code on a canvas: a body type and a palette per demon (see data.js).
 // Shapes are filled with a soft light from the upper left, outlined in near-black, with glowing eyes.
 const cache = new Map();

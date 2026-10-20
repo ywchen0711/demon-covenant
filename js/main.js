@@ -1,16 +1,16 @@
 // DEMON COVENANT — the game: exploring floors in first person, battles with press turns, talking to demons, fusion,
 // terminals, the story. Built on HUSH's renderer and sound.
 import * as THREE from 'three';
-import { DEMONS, SKILLS, ITEMS, SHOP, AREAS, FLOORS, RACES, EL_NAME, AFF_NAME, ELEMENTS, EQUIPS, BOSS_DROP, AIL_NAME } from './data.js?v=5';
-import { makeHero, makeDemon, gainExp, healFull, fusionResult, fuse, expFor, unitName, affOf, STOCK_MAX, ACTIVE_MAX, setUidFloor, refreshStats } from './party.js?v=5';
-import { createBattle, actor, useSkill, useItem, pass, tryEscape, consume, check, endTurnIfDone, enemyStep, rewards, alive, canUse, iconsLeft, sleepTurn, resetFighter } from './battle.js?v=5';
-import { startTalk, prompt as talkPrompt, answer as talkAnswer } from './talk.js?v=5';
-import { buildFloor, DIRS } from './dungeon.js?v=5';
-import { encounter, bossFor } from './encounter.js?v=5';
-import { PROLOGUE, EVENTS, BOSS, ENDINGS, route } from './story.js?v=5';
-import { portrait } from './art.js?v=5';
-import { AudioEngine } from './audio.js?v=5';
-import { buildWorld, TILE } from './world3d.js?v=5';
+import { DEMONS, SKILLS, ITEMS, SHOP, AREAS, FLOORS, RACES, EL_NAME, AFF_NAME, ELEMENTS, EQUIPS, BOSS_DROP, AIL_NAME, DIFFS } from './data.js?v=6';
+import { makeHero, makeDemon, gainExp, healFull, fusionResult, fuse, expFor, unitName, affOf, STOCK_MAX, ACTIVE_MAX, setUidFloor, refreshStats } from './party.js?v=6';
+import { createBattle, actor, useSkill, useItem, pass, tryEscape, consume, check, endTurnIfDone, enemyStep, rewards, alive, canUse, iconsLeft, sleepTurn, resetFighter } from './battle.js?v=6';
+import { startTalk, prompt as talkPrompt, answer as talkAnswer } from './talk.js?v=6';
+import { buildFloor, DIRS } from './dungeon.js?v=6';
+import { encounter, bossFor } from './encounter.js?v=6';
+import { PROLOGUE, EVENTS, BOSS, ENDINGS, route } from './story.js?v=6';
+import { portrait } from './art.js?v=6';
+import { AudioEngine } from './audio.js?v=6';
+import { buildWorld, TILE } from './world3d.js?v=6';
 
 const $ = (id) => document.getElementById(id);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -456,7 +456,9 @@ async function fieldSkills() {
 async function settings() {
   for (;;) {
     const vol = S.music ?? 0.5;
-    const i = await choose(L('設定', 'Settings'), [{ label: EN() ? '中文' : 'English' }, { label: L('音樂', 'Music'), right: vol > 0 ? `${Math.round(vol * 100)}%` : L('關', 'off') }]); if (i < 0) return;
+    const df = DIFFS[S.diff || 'normal'];
+    const i = await choose(L('設定', 'Settings'), [{ label: EN() ? '中文' : 'English' }, { label: L('音樂', 'Music'), right: vol > 0 ? `${Math.round(vol * 100)}%` : L('關', 'off') }, { label: L('難度', 'Difficulty'), right: T(df.name) }]); if (i < 0) return;
+    if (i === 2) { const order = ['easy', 'normal', 'hard']; S.diff = order[(order.indexOf(S.diff || 'normal') + 1) % 3]; save(); }
     if (i === 0) { lang = EN() ? 'zh' : 'en'; try { localStorage.setItem('dc.lang', lang); } catch (e) { /* ignore */ } document.documentElement.lang = EN() ? 'en' : 'zh-Hant'; staticText(); hud(); }
     if (i === 1) { S.music = vol >= 0.75 ? 0 : vol + 0.25; audio.setMusicVolume(S.music); }
   }
@@ -480,7 +482,7 @@ let BT = null;          // the battle on screen
 async function battle(foes, opts) {
   R.mode = 'battle'; audio.play('encounter'); audio.music(opts.boss ? 'boss' : 'battle'); flash('#ffffff');
   const party = [S.hero, ...activeDemons()];
-  const B = createBattle(party, foes, { moon: moon(), ambush: !opts.boss && Math.random() < 0.08 });
+  const B = createBattle(party, foes, { moon: moon(), ambush: !opts.boss && Math.random() < 0.08, diff: S.diff || 'normal', floor: S.floor });
   BT = { B, foes, boss: !!opts.boss, popups: [] };
   if (B.tick.length) B.tick = [];
   $('battle').hidden = false; drawBattle();
@@ -713,6 +715,8 @@ async function newGame() {
   audio.start(); $('title').hidden = true;
   const name = await askName();
   S = { v: 1, seed: Math.floor(Math.random() * 1e9), name, hero: makeHero(name), stock: [], active: [], macca: 300, bag: { salve: 3, water: 1, antidote: 1 }, gear: {}, align: 0, floor: 0, steps: 0, maps: {}, known: {}, music: 0.5 };
+  const dI = await choose(L('難度（之後可以在設定裡更改）', 'Difficulty (you can change it later in Settings)'), [{ label: L('簡單', 'Easy'), right: L('劇情為主', 'For the story') }, { label: L('普通', 'Normal'), right: L('推薦', 'Recommended') }, { label: L('困難', 'Hard'), right: L('要動腦', 'A real fight') }]);
+  S.diff = ['easy', 'normal', 'hard'][dI < 0 ? 1 : dI];
   R.mode = 'story'; await say(PROLOGUE);
   const pixie = makeDemon('pixie'); S.stock.push(pixie); S.active.push(pixie.uid);
   await showDemon(pixie, L('ORACLE 送來了一隻惡魔。', 'ORACLE sends you a demon.'));

@@ -8,8 +8,8 @@
 // the next attack of its kind back on the attacker; Dekaja clears the foes' boosts and walls, Dekunda the party's
 // debuffs and ailments. Poison takes a little health at the start of each of its side's turns; a sleeper skips turns
 // until it wakes (or is hit, which hurts more). Ailments end with the battle.
-import { SKILLS, ITEMS, DEMONS } from './data.js?v=5';
-import { affOf, guards } from './party.js?v=5';
+import { SKILLS, ITEMS, DEMONS, DIFFS } from './data.js?v=6';
+import { affOf, guards } from './party.js?v=6';
 
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 export const alive = (u) => u.hp > 0;
@@ -20,7 +20,9 @@ export function resetFighter(u) { u.buff = { atk: 0, def: 0 }; u.ail = null; u.c
 // side 0 = the party, side 1 = the demons
 export function createBattle(party, enemies, opts = {}) {
   const B = { sides: [party, enemies], side: opts.ambush ? 1 : 0, icons: { full: 0, blink: 0 }, next: 0, log: [], over: null, turnNo: 0,
-    boss: enemies.some(isBoss), moon: opts.moon || 0, rng: opts.rng || Math.random, escaped: false, tick: [] };
+    boss: enemies.some(isBoss), moon: opts.moon || 0, rng: opts.rng || Math.random, escaped: false, tick: [],
+    // the difficulty, and foes that grow fiercer the deeper you go (from the fourth floor on)
+    diff: { ...(DIFFS[opts.diff] || DIFFS.normal), deep: 1 + 0.035 * Math.max(0, (opts.floor || 0) - 3) } };
   for (const u of [...party, ...enemies]) resetFighter(u);
   startSide(B, B.side);
   return B;
@@ -71,6 +73,7 @@ function calc(B, a, d, sk) {
   let crit = false;
   if (phys && r() < 0.05 + (sk.crit || 0) + (a.lu - d.lu) / 200) { crit = true; dmg *= 1.5; }
   if (aff === 'w') dmg *= 1.5; else if (aff === 's') dmg *= 0.5;
+  if (B.diff) dmg *= a.enemy && !d.enemy ? B.diff.foe * B.diff.deep : d.enemy && !a.enemy ? B.diff.you : 1;
   return { aff, crit, wall, dmg: Math.max(1, Math.round(dmg)) };
 }
 // an ailment lands by chance (luck helps); an amulet keeps it away, and bosses never fall asleep
@@ -242,5 +245,5 @@ export function rewards(B) {
   const foes = B.sides[1];
   const exp = foes.reduce((s, u) => s + Math.round(Math.pow(u.lv, 1.75) * 2.2 + 6) * (DEMONS[u.id].boss ? 8 : 1), 0);
   const macca = foes.reduce((s, u) => s + Math.round(u.lv * 9 + B.rng() * u.lv * 6) * (DEMONS[u.id].boss ? 6 : 1), 0);
-  return { exp, macca };
+  return { exp: Math.round(exp * (B.diff ? B.diff.exp : 1)), macca };
 }

@@ -1,8 +1,8 @@
 // DEMON COVENANT — a floor in 3D. Textures are drawn on canvases (the way HUSH does it); walls are instanced boxes,
 // and the special tiles get glowing markers. Each area has its own look.
 import * as THREE from 'three';
-import { portrait } from './art.js?v=5';
-import { DEMONS } from './data.js?v=5';
+import { portrait } from './art.js?v=6';
+import { DEMONS } from './data.js?v=6';
 
 export const TILE = 3, WALL_H = 3.2;
 const cache = new Map();

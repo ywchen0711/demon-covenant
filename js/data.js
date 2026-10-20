@@ -196,13 +196,13 @@ export const DEMON_ORDER = D.map((d) => d[0]);
 
 // bosses: not recruitable; hp multiplier and extra press turns
 const B = (id, zh, en, race, lv, build, aff, skills, art, hpX, turns) => { DEMONS[id] = { id, name: [zh, en], race, lv, build, aff: parseAff(aff), skills, art, boss: true, hpX, turns }; };
-B('gozuki', '牛頭鬼', 'Gozuki', 'brute', 9, 'phys', 'phys:s fire:s ice:w', { 1: 'lunge', 2: 'rampage', 3: 'warcry' }, ['oxhead', '#5a3a2a', '#8a4a3a', '#ff6020'], 2.9, 2);
+B('gozuki', '牛頭鬼', 'Gozuki', 'brute', 9, 'phys', 'phys:s fire:s ice:w', { 1: 'lunge', 2: 'rampage', 3: 'warcry' }, ['oxhead', '#5a3a2a', '#8a4a3a', '#ff6020'], 2.4, 2);
 B('nue', '鵺', 'Nue', 'beast', 16, 'mag', 'elec:d dark:s force:w', { 1: 'elec2', 2: 'elecAll', 3: 'dark1', 4: 'rampage', 5: 'dormina' }, ['chimera', '#4a3a5a', '#e8c070', '#80ffff'], 3.9, 2);
-B('garuda', '迦樓羅', 'Garuda', 'avian', 24, 'bal', 'force:d elec:w fire:s', { 1: 'force2', 2: 'forceAll', 3: 'mighty', 4: 'warcry' }, ['bird', '#d89030', '#3a8a5a', '#ffffff'], 3.6, 2);
-B('orochi', '八岐大蛇', 'Yamata no Orochi', 'snake', 31, 'phys', 'ice:d fire:w dark:s', { 1: 'iceAll', 2: 'myriad', 3: 'ice3', 4: 'rend', 5: 'poisma' }, ['hydra', '#3a5a3a', '#c8b060', '#ff2020'], 5.5, 2);
-B('ren', '蓮・天之劍', 'Ren, Sword of Heaven', 'divine', 37, 'phys', 'light:n phys:s dark:w', { 1: 'light3', 2: 'myriad', 3: 'healAll2', 4: 'warcry', 5: 'charge' }, ['angel', '#f0f0ff', '#ffd040', '#40a0ff', ['wings2']], 5.5, 2);
-B('yui', '結衣・夜之后', 'Yui, Queen of Night', 'night', 37, 'mag', 'dark:n force:s light:w', { 1: 'dark3', 2: 'darkAll', 3: 'iceAll2', 4: 'hex', 5: 'lullaby' }, ['lady', '#2a0a3a', '#ff4090', '#ff80ff', ['batwings', 'crown']], 5.5, 2);
-B('tiamat', '提亞瑪特', 'Tiamat', 'snake', 43, 'bal', 'ice:s fire:s elec:s force:s', { 1: 'ruin', 2: 'fireAll2', 3: 'iceAll2', 4: 'elecAll2', 5: 'ruin2', 6: 'rend', 7: 'dispel' }, ['hydra', '#2a1a4a', '#c040ff', '#ffffff', ['crown']], 4.8, 3);
+B('garuda', '迦樓羅', 'Garuda', 'avian', 24, 'bal', 'force:d elec:w fire:s', { 1: 'force2', 2: 'forceAll', 3: 'mighty', 4: 'warcry' }, ['bird', '#d89030', '#3a8a5a', '#ffffff'], 4.3, 2);
+B('orochi', '八岐大蛇', 'Yamata no Orochi', 'snake', 31, 'phys', 'ice:d fire:w dark:s', { 1: 'iceAll', 2: 'myriad', 3: 'ice3', 4: 'rend', 5: 'poisma' }, ['hydra', '#3a5a3a', '#c8b060', '#ff2020'], 6.3, 2);
+B('ren', '蓮・天之劍', 'Ren, Sword of Heaven', 'divine', 37, 'phys', 'light:n phys:s dark:w', { 1: 'light3', 2: 'myriad', 3: 'healAll2', 4: 'warcry', 5: 'charge' }, ['angel', '#f0f0ff', '#ffd040', '#40a0ff', ['wings2']], 6.2, 2);
+B('yui', '結衣・夜之后', 'Yui, Queen of Night', 'night', 37, 'mag', 'dark:n force:s light:w', { 1: 'dark3', 2: 'darkAll', 3: 'iceAll2', 4: 'hex', 5: 'lullaby' }, ['lady', '#2a0a3a', '#ff4090', '#ff80ff', ['batwings', 'crown']], 6.2, 2);
+B('tiamat', '提亞瑪特', 'Tiamat', 'snake', 43, 'bal', 'ice:s fire:s elec:s force:s', { 1: 'ruin', 2: 'fireAll2', 3: 'iceAll2', 4: 'elecAll2', 5: 'ruin2', 6: 'rend', 7: 'dispel' }, ['hydra', '#2a1a4a', '#c040ff', '#ffffff', ['crown']], 5.6, 3);
 
 // ---------------------------------------------------------------- the hero
 export const HERO = { build: 'bal', skills: { 1: 'lunge', 3: 'heal', 6: 'charge', 12: 'cleave', 16: 'cleanse', 20: 'mighty', 28: 'myriad', 34: 'heal2', 42: 'deathbound', 50: 'godhand', 58: 'ruin2' }, aff: {} };
@@ -261,6 +261,12 @@ export const EQUIPS = {
 for (const e of Object.values(EQUIPS)) e.affs = parseAff(e.aff);
 export const SLOTS = ['weapon', 'armor', 'acc'];
 // what each boss leaves behind
+// difficulty: how hard the foes hit (foe), how hard you hit them (you), and how much they teach (exp)
+export const DIFFS = {
+  easy:   { name: ['簡單', 'Easy'], foe: 0.72, you: 1.2, exp: 1.25 },
+  normal: { name: ['普通', 'Normal'], foe: 1, you: 1, exp: 1 },
+  hard:   { name: ['困難', 'Hard'], foe: 1.25, you: 0.85, exp: 1 },
+};
 export const BOSS_DROP = { gozuki: 'katana', nue: 'raiju', garuda: 'feather', orochi: 'kusanagi', ren: 'masamune', yui: 'yoroi' };
 
 // ---------------------------------------------------------------- areas and floors

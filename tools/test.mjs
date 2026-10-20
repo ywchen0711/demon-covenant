@@ -1,12 +1,12 @@
 // node tools/test.mjs [sim runs] — checks the data, the maps, the press-turn rules and negotiation, then plays the whole game
 // on autopilot to see how hard each floor and boss is.
-import { SKILLS, DEMONS, DEMON_ORDER, AREAS, FLOORS, RACE_ORDER, fuseRace, ITEMS, EQUIPS, BOSS_DROP, SHOP, HERO } from '../js/data.js?v=5';
-import { makeHero, makeDemon, gainExp, fuse, fusionResult, healFull, expFor, refreshStats, affOf } from '../js/party.js?v=5';
-import { createBattle, useSkill, useItem, actor, consume, iconsLeft, endTurnIfDone, enemyStep, enemyAction, rewards, alive, canUse, sleepTurn, startSide } from '../js/battle.js?v=5';
-import { startTalk, prompt, answer } from '../js/talk.js?v=5';
-import { buildFloor, bfs } from '../js/dungeon.js?v=5';
-import { encounter, bossFor, FLOOR_CAP } from '../js/encounter.js?v=5';
-import { EVENTS, BOSS, route } from '../js/story.js?v=5';
+import { SKILLS, DEMONS, DEMON_ORDER, AREAS, FLOORS, RACE_ORDER, fuseRace, ITEMS, EQUIPS, BOSS_DROP, SHOP, HERO } from '../js/data.js?v=6';
+import { makeHero, makeDemon, gainExp, fuse, fusionResult, healFull, expFor, refreshStats, affOf } from '../js/party.js?v=6';
+import { createBattle, useSkill, useItem, actor, consume, iconsLeft, endTurnIfDone, enemyStep, enemyAction, rewards, alive, canUse, sleepTurn, startSide } from '../js/battle.js?v=6';
+import { startTalk, prompt, answer } from '../js/talk.js?v=6';
+import { buildFloor, bfs } from '../js/dungeon.js?v=6';
+import { encounter, bossFor, FLOOR_CAP } from '../js/encounter.js?v=6';
+import { EVENTS, BOSS, route } from '../js/story.js?v=6';
 
 let fails = 0;
 const ok = (name, cond, extra = '') => { console.log((cond ? 'ok   ' : 'FAIL ') + name + (extra ? '  ' + extra : '')); if (!cond) fails++; };
@@ -114,8 +114,8 @@ function bestDemons(hero, index) {
   const got = [...new Set(ids)].map((id) => DEMONS[id]).filter((d) => d.lv <= hero.lv).sort((a, b) => b.lv - a.lv).slice(0, 3).map((d) => makeDemon(d.id, Math.max(d.lv, hero.lv - 3)));
   return got.length ? got : [makeDemon('pixie')];     // ORACLE's Pixie at the start
 }
-function fight(party, foes, r) {
-  const B = createBattle(party, foes, { rng: r });
+function fight(party, foes, r, floor = 0, diff = 'normal') {
+  const B = createBattle(party, foes, { rng: r, floor, diff });
   for (let guard = 0; guard < 400 && !B.over; guard++) {
     const a = actor(B); if (!a) break;
     if (B.side === 0) {
@@ -129,7 +129,7 @@ function fight(party, foes, r) {
   }
   return B;
 }
-const RUNS = +(process.argv[2] || 6);
+const RUNS = +(process.argv[2] || 6), DIFF = process.argv[3] || 'normal';
 const table = [];
 for (let run = 0; run < RUNS; run++) {
   const r = rng(1000 + run), hero = makeHero('Kai'); let deaths = 0;
@@ -138,7 +138,7 @@ for (let run = 0; run < RUNS; run++) {
     for (const u of party) healFull(u);
     for (let k = 0; k < 13; k++) {
       if (k === 6) for (const u of party) healFull(u);           // a terminal half way
-      const B = fight(party, encounter(i, r), r); n++;
+      const B = fight(party, encounter(i, r), r, i, DIFF); n++;
       if (B.over === 'win') { wins++; const rw = rewards(B); for (const u of party) if (alive(u)) gainExp(u, rw.exp); }
       else { deaths++; for (const u of party) healFull(u); }
       for (const u of party) if (!alive(u)) u.hp = 1;
@@ -147,7 +147,7 @@ for (let run = 0; run < RUNS; run++) {
     if (FLOORS[i].boss) {
       party = [hero, ...bestDemons(hero, i)]; for (const u of party) healFull(u);
       const ro = run % 3 === 0 ? 'law' : run % 3 === 1 ? 'chaos' : 'neutral';
-      let tries = 0, won = false; while (tries < 3 && !won) { tries++; for (const u of party) healFull(u); const B = fight(party, bossFor(i, ro), r); if (B.over === 'win') { won = true; const rw = rewards(B); for (const u of party) gainExp(u, rw.exp); break; } for (let k = 0; k < 3; k++) { const B2 = fight(party, encounter(i, r), r); if (B2.over === 'win') for (const u of party) gainExp(u, rewards(B2).exp); for (const u of party) healFull(u); } }
+      let tries = 0, won = false; while (tries < 3 && !won) { tries++; for (const u of party) healFull(u); const B = fight(party, bossFor(i, ro), r, i, DIFF); if (B.over === 'win') { won = true; const rw = rewards(B); for (const u of party) gainExp(u, rw.exp); break; } for (let k = 0; k < 3; k++) { const B2 = fight(party, encounter(i, r), r); if (B2.over === 'win') for (const u of party) gainExp(u, rewards(B2).exp); for (const u of party) healFull(u); } }
       bossWin = won ? tries : 'lost';
     }
     (table[i] = table[i] || []).push({ lv: hero.lv, rate: wins / n, boss: bossWin, deaths });
