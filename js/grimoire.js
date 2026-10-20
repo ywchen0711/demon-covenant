@@ -71,11 +71,10 @@ function teeth(x0, y0, x1, y1, n, len, col = '#ece2c6', dir = 1) {
   const g = G; for (let i = 0; i < n; i++) { const t = (i + 0.5) / n, x = x0 + (x1 - x0) * t, y = y0 + (y1 - y0) * t, w = Math.abs(x1 - x0) / n * 0.5, l = len * (0.7 + 0.3 * Math.sin(i * 2.3) ** 2); const p = poly([[x - w, y], [x + w * 0.2, y + l * dir], [x + w, y]]); g.fillStyle = col; g.fill(p); g.lineWidth = 0.8; g.strokeStyle = INK; g.stroke(p); }
 }
 // ---------------------------------------------------------------- behind every demon
-function ground(accent) {
+function ground(accent, bare) {
   const g = G;
-  const bg = g.createRadialGradient(128, 110, 10, 128, 130, 200); bg.addColorStop(0, '#2c2432'); bg.addColorStop(0.65, '#130e18'); bg.addColorStop(1, '#060408');
-  g.fillStyle = bg; g.fillRect(0, 0, 256, 256);
-  g.save(); g.translate(128, 120); g.strokeStyle = css(hx(accent), 0.2); g.lineWidth = 0.9;
+  if (!bare) { const bg = g.createRadialGradient(128, 110, 10, 128, 130, 200); bg.addColorStop(0, '#2c2432'); bg.addColorStop(0.65, '#130e18'); bg.addColorStop(1, '#060408'); g.fillStyle = bg; g.fillRect(0, 0, 256, 256); }
+  g.save(); g.translate(128, 120); g.globalAlpha = bare ? 0.55 : 1; g.strokeStyle = css(hx(accent), 0.2); g.lineWidth = 0.9;
   for (const r of [108, 101, 72]) { g.beginPath(); g.arc(0, 0, r, 0, 7); g.stroke(); }
   g.beginPath(); for (let k = 0; k <= 7; k++) { const a = -Math.PI / 2 + k * (Math.PI * 2 / 7) * 3; const x = Math.cos(a) * 101, y = Math.sin(a) * 101; k ? g.lineTo(x, y) : g.moveTo(x, y); } g.stroke();
   g.font = '8px serif'; g.fillStyle = css(hx(accent), 0.32); g.textAlign = 'center';
@@ -85,11 +84,12 @@ function ground(accent) {
   const sh = g.createRadialGradient(128, 244, 4, 128, 244, 76); sh.addColorStop(0, 'rgba(0,0,0,0.8)'); sh.addColorStop(1, 'rgba(0,0,0,0)');
   g.save(); g.scale(1, 0.18); g.fillStyle = sh; g.beginPath(); g.arc(128, 244 / 0.18, 76, 0, 7); g.fill(); g.restore();
 }
-function grain(seed) {
+function grain(seed, bare) {
   const g = G; let r = seed || 7; const rnd = () => ((r = (r * 16807) % 2147483647) / 2147483647);
-  g.save(); g.globalCompositeOperation = 'overlay';
+  g.save(); g.globalCompositeOperation = bare ? 'source-atop' : 'overlay';
   for (let i = 0; i < 1400; i++) { g.fillStyle = rnd() < 0.5 ? 'rgba(255,240,220,0.07)' : 'rgba(0,0,0,0.09)'; g.fillRect(rnd() * 256, rnd() * 256, 1 + rnd() * 1.5, 1 + rnd() * 1.5); }
   g.restore();
+  if (bare) return;
   const v = g.createRadialGradient(128, 128, 90, 128, 128, 182); v.addColorStop(0, 'rgba(0,0,0,0)'); v.addColorStop(1, 'rgba(0,0,0,0.55)'); g.fillStyle = v; g.fillRect(0, 0, 256, 256);
 }
 const SKIN = '#e6d2bc';
@@ -263,16 +263,16 @@ const P = {
 // plates that need room: [shift x, shift y, scale about the feet]
 const FIT = { lantern: [0, 0, 0.9], hollowmail: [0, 0, 0.95] };
 // a demon's plate as a 256×256 canvas. art = [plate, main colour, second colour, accent colour]
-export function plate(art) {
-  const key = 'g:' + art.join();
+export function plate(art, bare = false) {
+  const key = (bare ? 'b:' : 'g:') + art.join();
   if (cache.has(key)) return cache.get(key);
   const c = document.createElement('canvas'); c.width = c.height = 256; G = c.getContext('2d');
-  ground(art[3]);
+  ground(art[3], bare);
   const fit = FIT[art[0]];
   G.save(); if (fit) { G.translate(128, 244); G.scale(fit[2], fit[2]); G.translate(-128 + fit[0], -244 + fit[1]); }
   (P[art[0]] || P.ooze)(art[1], art[2], art[3]);
   G.restore();
-  grain([...key].reduce((n, ch) => (n * 31 + ch.charCodeAt(0)) % 2147483647, 7) || 7);
+  grain([...key].reduce((n, ch) => (n * 31 + ch.charCodeAt(0)) % 2147483647, 7) || 7, bare);
   cache.set(key, c); return c;
 }
 export const PLATES = Object.keys(P);

@@ -117,6 +117,12 @@ const D = [
   ['sudama', '魑魅', 'Sudama', 'jirae', 8, 'bal', 'force:s elec:w', { 8: 'force1', 9: 'lunge', 11: 'hex' }, ['imp', '#8a9a5a', '#d8e0a0', '#ffff80']],
   ['hitokoto', '一言主', 'Hitokotonushi', 'jirae', 18, 'tank', 'phys:s force:n fire:w', { 18: 'force2', 19: 'ironwall', 21: 'healAll' }, ['giant', '#7a6a4a', '#d8c890', '#ffffff']],
   ['tsuchigumo', '土蜘蛛', 'Tsuchigumo', 'jirae', 27, 'phys', 'phys:s elec:s fire:w', { 27: 'myriad', 28: 'elec2', 30: 'rend' }, ['spider', '#4a3a2a', '#c09050', '#ff4020']],
+  // the first of the bestiary-style demons (js/grimoire.js): met on the first floor
+  ['ooze', '腐泥', 'Ooze', 'foul', 1, 'tank', 'phys:s fire:w', { 1: 'attack', 2: 'poisma', 4: 'lunge' }, ['ooze', '#4a5a2a', '#a8c870', '#c8ff40']],
+  ['mimic', '噬寶箱', 'Gnashing Chest', 'jirae', 2, 'tank', 'phys:s ice:w', { 2: 'lunge', 3: 'rampage', 5: 'warcry' }, ['mimic', '#7a4a2a', '#b8a060', '#ff5030']],
+  ['lampmoth', '燈蛾夫人', 'Lady Lampmoth', 'night', 2, 'mag', 'force:s fire:w', { 2: 'dormina', 3: 'force1', 4: 'heal' }, ['lampmoth', '#2a2230', '#b8a888', '#ffc860']],
+  ['lanternbones', '提燈骸', 'Lantern Bones', 'foul', 3, 'mag', 'dark:n fire:w light:w', { 3: 'dark1', 4: 'fire1', 6: 'hex' }, ['lantern', '#3a3046', '#6a2a2a', '#80ffd0']],
+  ['hollowmail', '空鎧', 'Hollow Mail', 'brute', 3, 'phys', 'phys:s elec:w', { 3: 'lunge', 4: 'warcry', 6: 'rampage' }, ['hollowmail', '#6a6a78', '#b89040', '#c060ff']],
   ['slime', '史萊姆', 'Slime', 'foul', 1, 'tank', 'phys:s fire:w', { 1: 'attack', 3: 'lunge' }, ['blob', '#5ab84a', '#c0f0a0', '#1a2a10']],
   ['wisp', '鬼火', 'Will o\' Wisp', 'foul', 7, 'mag', 'phys:n fire:s ice:w light:w', { 7: 'fire1', 8: 'dark1' }, ['wisp', '#80c0ff', '#e0f0ff', '#ffffff']],
   ['ghoul', '食屍鬼', 'Ghoul', 'foul', 15, 'phys', 'dark:n ice:s fire:w light:w', { 15: 'rampage', 16: 'dark1', 18: 'hex' }, ['zombie', '#6a7a5a', '#a0a080', '#ff2020']],
@@ -190,7 +196,7 @@ export const DEMON_ORDER = D.map((d) => d[0]);
 
 // bosses: not recruitable; hp multiplier and extra press turns
 const B = (id, zh, en, race, lv, build, aff, skills, art, hpX, turns) => { DEMONS[id] = { id, name: [zh, en], race, lv, build, aff: parseAff(aff), skills, art, boss: true, hpX, turns }; };
-B('gozuki', '牛頭鬼', 'Gozuki', 'brute', 9, 'phys', 'phys:s fire:s ice:w', { 1: 'lunge', 2: 'rampage', 3: 'warcry' }, ['ogre', '#6a3a2a', '#e0d0b0', '#ff3020', ['horns']], 2.9, 2);
+B('gozuki', '牛頭鬼', 'Gozuki', 'brute', 9, 'phys', 'phys:s fire:s ice:w', { 1: 'lunge', 2: 'rampage', 3: 'warcry' }, ['oxhead', '#5a3a2a', '#8a4a3a', '#ff6020'], 2.9, 2);
 B('nue', '鵺', 'Nue', 'beast', 16, 'mag', 'elec:d dark:s force:w', { 1: 'elec2', 2: 'elecAll', 3: 'dark1', 4: 'rampage', 5: 'dormina' }, ['chimera', '#4a3a5a', '#e8c070', '#80ffff'], 3.9, 2);
 B('garuda', '迦樓羅', 'Garuda', 'avian', 24, 'bal', 'force:d elec:w fire:s', { 1: 'force2', 2: 'forceAll', 3: 'mighty', 4: 'warcry' }, ['bird', '#d89030', '#3a8a5a', '#ffffff'], 3.6, 2);
 B('orochi', '八岐大蛇', 'Yamata no Orochi', 'snake', 31, 'phys', 'ice:d fire:w dark:s', { 1: 'iceAll', 2: 'myriad', 3: 'ice3', 4: 'rend', 5: 'poisma' }, ['hydra', '#3a5a3a', '#c8b060', '#ff2020'], 5.5, 2);
@@ -260,7 +266,7 @@ export const BOSS_DROP = { gozuki: 'katana', nue: 'raiju', garuda: 'feather', or
 // ---------------------------------------------------------------- areas and floors
 // size: the maze size (odd); enc: the demons met there (level range around their own level); look: see js/world3d.js
 export const AREAS = [
-  { id: 'shinjuku', name: ['新宿地下街', 'Shinjuku Underground'], floors: 2, size: 15, look: 'subway', enc: ['slime', 'pixie', 'gnome', 'harpy', 'kodama', 'shiisa', 'poltergeist', 'huapo', 'kappa', 'jackfrost', 'caitsith', 'wisp', 'ippon', 'sudama', 'lilim'], boss: 'gozuki', music: 0 },
+  { id: 'shinjuku', name: ['新宿地下街', 'Shinjuku Underground'], floors: 2, size: 15, look: 'subway', enc: ['ooze', 'mimic', 'lampmoth', 'lanternbones', 'hollowmail', 'slime', 'pixie', 'gnome', 'harpy', 'kodama', 'shiisa', 'poltergeist', 'huapo', 'kappa', 'jackfrost', 'caitsith', 'wisp', 'ippon', 'sudama', 'lilim'], boss: 'gozuki', music: 0 },
   { id: 'ikebukuro', name: ['池袋廢墟商場', 'Ikebukuro Ruined Mall'], floors: 2, size: 17, look: 'mall', enc: ['itsumade', 'apsaras', 'kelpie', 'kitsune', 'mummy', 'angel', 'karasu', 'pyrojack', 'momunofu', 'siren', 'nekomata', 'naga', 'incubus', 'ghoul', 'archangel', 'oni', 'lilim', 'sudama'], boss: 'nue', music: 1 },
   { id: 'tower', name: ['東京鐵塔', 'Tokyo Tower'], floors: 2, size: 17, look: 'tower', enc: ['onmoraki', 'hitokoto', 'lamia', 'inugami', 'yaksini', 'virtue', 'leanan', 'mizuchi', 'golem', 'minotaur', 'thunderbird', 'archangel', 'oni', 'mothman', 'incubus'], boss: 'garuda', music: 2 },
   { id: 'kudan', name: ['九段靈廟', 'Kudan Spirit Shrine'], floors: 2, size: 19, look: 'shrine', enc: ['mothman', 'rakshasa', 'principality', 'orthrus', 'succubus', 'seiryu', 'tsuchigumo', 'valkyrie', 'phoenix', 'dakini', 'mizuchi', 'thunderbird'], boss: 'orochi', music: 3 },

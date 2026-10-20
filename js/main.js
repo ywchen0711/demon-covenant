@@ -1,16 +1,16 @@
 // DEMON COVENANT — the game: exploring floors in first person, battles with press turns, talking to demons, fusion,
 // terminals, the story. Built on HUSH's renderer and sound.
 import * as THREE from 'three';
-import { DEMONS, SKILLS, ITEMS, SHOP, AREAS, FLOORS, RACES, EL_NAME, AFF_NAME, ELEMENTS, EQUIPS, BOSS_DROP, AIL_NAME } from './data.js?v=4';
-import { makeHero, makeDemon, gainExp, healFull, fusionResult, fuse, expFor, unitName, affOf, STOCK_MAX, ACTIVE_MAX, setUidFloor, refreshStats } from './party.js?v=4';
-import { createBattle, actor, useSkill, useItem, pass, tryEscape, consume, check, endTurnIfDone, enemyStep, rewards, alive, canUse, iconsLeft, sleepTurn, resetFighter } from './battle.js?v=4';
-import { startTalk, prompt as talkPrompt, answer as talkAnswer } from './talk.js?v=4';
-import { buildFloor, DIRS } from './dungeon.js?v=4';
-import { encounter, bossFor } from './encounter.js?v=4';
-import { PROLOGUE, EVENTS, BOSS, ENDINGS, route } from './story.js?v=4';
-import { portrait } from './art.js?v=4';
-import { AudioEngine } from './audio.js?v=4';
-import { buildWorld, TILE } from './world3d.js?v=4';
+import { DEMONS, SKILLS, ITEMS, SHOP, AREAS, FLOORS, RACES, EL_NAME, AFF_NAME, ELEMENTS, EQUIPS, BOSS_DROP, AIL_NAME } from './data.js?v=5';
+import { makeHero, makeDemon, gainExp, healFull, fusionResult, fuse, expFor, unitName, affOf, STOCK_MAX, ACTIVE_MAX, setUidFloor, refreshStats } from './party.js?v=5';
+import { createBattle, actor, useSkill, useItem, pass, tryEscape, consume, check, endTurnIfDone, enemyStep, rewards, alive, canUse, iconsLeft, sleepTurn, resetFighter } from './battle.js?v=5';
+import { startTalk, prompt as talkPrompt, answer as talkAnswer } from './talk.js?v=5';
+import { buildFloor, DIRS } from './dungeon.js?v=5';
+import { encounter, bossFor } from './encounter.js?v=5';
+import { PROLOGUE, EVENTS, BOSS, ENDINGS, route } from './story.js?v=5';
+import { portrait } from './art.js?v=5';
+import { AudioEngine } from './audio.js?v=5';
+import { buildWorld, TILE } from './world3d.js?v=5';
 
 const $ = (id) => document.getElementById(id);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -384,7 +384,7 @@ function demonCard(u) {
     <div class="gear">${slotsOf(u).map((sl) => `<span><i>${esc(T(SLOT_NAME[sl]))}</i>${u.eq && u.eq[sl] ? esc(T(EQUIPS[u.eq[sl]].name)) : '—'}</span>`).join('')}${u.hero ? `<span><i>${L('物攻/防', 'Atk/Def')}</i>${u.atk || 0} / ${u.def || 0}</span>` : ''}</div>
     ${u.hero ? '' : `<div class="exp">${L('下一級', 'Next')} ${Math.max(0, expFor(u.lv + 1) - u.exp)}</div>`}</div></div>`;
 }
-function paintCard(d, u) { const c = d.querySelector('.por'); if (!c) return; c.width = c.height = 200; const g = c.getContext('2d'); if (u.hero) { g.fillStyle = '#1a2030'; g.fillRect(0, 0, 200, 200); heroPortrait(g); } else g.drawImage(portrait(DEMONS[u.id].art), 0, 0, 200, 200); }
+function paintCard(d, u) { const c = d.querySelector('.por'); if (!c) return; c.width = c.height = 200; const g = c.getContext('2d'); if (u.hero) { g.fillStyle = '#1a2030'; g.fillRect(0, 0, 200, 200); heroPortrait(g); } else g.drawImage(portrait(DEMONS[u.id].art, true), 0, 0, 200, 200); }
 // the hero: a student in a dark coat, lit by the cyan screen of the summoning program on the arm
 function heroPortrait(g) {
   const bg = g.createRadialGradient(100, 90, 10, 100, 100, 130); bg.addColorStop(0, '#24384a'); bg.addColorStop(1, '#070a10'); g.fillStyle = bg; g.fillRect(0, 0, 200, 200);

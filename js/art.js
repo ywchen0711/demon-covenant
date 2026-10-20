@@ -1,3 +1,4 @@
+import { plate, PLATES } from './grimoire.js?v=5';
 // DEMON COVENANT — demon portraits, drawn in code on a canvas: a body type and a palette per demon (see data.js).
 // Shapes are filled with a soft light from the upper left, outlined in near-black, with glowing eyes.
 const cache = new Map();
@@ -310,7 +311,8 @@ const EXTRA = {
   wraps: { draw(g, a, b) { g.strokeStyle = shade(a, -0.35); g.lineWidth = 3; for (let k = 0; k < 7; k++) { g.beginPath(); g.moveTo(94, 116 + k * 14); g.lineTo(164, 124 + k * 13); g.stroke(); } for (let k = 0; k < 3; k++) { g.beginPath(); g.moveTo(100, 68 + k * 9); g.lineTo(150, 72 + k * 9); g.stroke(); } } },
 };
 // the portrait of a demon (art = [body, main colour, second colour, eye colour, extras]) as a 256×256 canvas
-export function portrait(art) {
+export function portrait(art, card = false) {
+  if (PLATES.includes(art[0])) return plate(art, !card);
   const key = art.join();
   if (cache.has(key)) return cache.get(key);
   const c = document.createElement('canvas'); c.width = c.height = 256;

@@ -1,19 +1,19 @@
 // node tools/test.mjs [sim runs] — checks the data, the maps, the press-turn rules and negotiation, then plays the whole game
 // on autopilot to see how hard each floor and boss is.
-import { SKILLS, DEMONS, DEMON_ORDER, AREAS, FLOORS, RACE_ORDER, fuseRace, ITEMS, EQUIPS, BOSS_DROP, SHOP, HERO } from '../js/data.js?v=4';
-import { makeHero, makeDemon, gainExp, fuse, fusionResult, healFull, expFor, refreshStats, affOf } from '../js/party.js?v=4';
-import { createBattle, useSkill, useItem, actor, consume, iconsLeft, endTurnIfDone, enemyStep, enemyAction, rewards, alive, canUse, sleepTurn, startSide } from '../js/battle.js?v=4';
-import { startTalk, prompt, answer } from '../js/talk.js?v=4';
-import { buildFloor, bfs } from '../js/dungeon.js?v=4';
-import { encounter, bossFor, FLOOR_CAP } from '../js/encounter.js?v=4';
-import { EVENTS, BOSS, route } from '../js/story.js?v=4';
+import { SKILLS, DEMONS, DEMON_ORDER, AREAS, FLOORS, RACE_ORDER, fuseRace, ITEMS, EQUIPS, BOSS_DROP, SHOP, HERO } from '../js/data.js?v=5';
+import { makeHero, makeDemon, gainExp, fuse, fusionResult, healFull, expFor, refreshStats, affOf } from '../js/party.js?v=5';
+import { createBattle, useSkill, useItem, actor, consume, iconsLeft, endTurnIfDone, enemyStep, enemyAction, rewards, alive, canUse, sleepTurn, startSide } from '../js/battle.js?v=5';
+import { startTalk, prompt, answer } from '../js/talk.js?v=5';
+import { buildFloor, bfs } from '../js/dungeon.js?v=5';
+import { encounter, bossFor, FLOOR_CAP } from '../js/encounter.js?v=5';
+import { EVENTS, BOSS, route } from '../js/story.js?v=5';
 
 let fails = 0;
 const ok = (name, cond, extra = '') => { console.log((cond ? 'ok   ' : 'FAIL ') + name + (extra ? '  ' + extra : '')); if (!cond) fails++; };
 const rng = (s) => () => { s |= 0; s = s + 0x6D2B79F5 | 0; let t = Math.imul(s ^ s >>> 15, 1 | s); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
 
 // ---- data
-ok('72 demons to recruit', DEMON_ORDER.length === 72, String(DEMON_ORDER.length));
+ok('77 demons to recruit', DEMON_ORDER.length === 77, String(DEMON_ORDER.length));
 ok('demon ids are unique', new Set(DEMON_ORDER).size === DEMON_ORDER.length);
 ok('every new demon is met somewhere or fused (Lv 41+ only by fusion)', DEMON_ORDER.every((id) => DEMONS[id].lv > 40 || AREAS.some((a) => a.enc.includes(id))), DEMON_ORDER.filter((id) => DEMONS[id].lv <= 40 && !AREAS.some((a) => a.enc.includes(id))).join());
 ok('the hero learns skills up to Lv 58', Object.values(HERO.skills).every((s) => SKILLS[s]) && Math.max(...Object.keys(HERO.skills).map(Number)) >= 58);
