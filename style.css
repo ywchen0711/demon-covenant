@@ -128,6 +128,8 @@ body.shake #view, body.shake #battle { animation: shake 0.3s; }
 .tag { font-style: normal; font-family: var(--mono); font-size: 10px; margin-left: 5px; padding: 0 4px; border-radius: 3px; vertical-align: 2px; background: rgba(255, 255, 255, 0.1); color: var(--ink); }
 .tag.poison { background: #6a2a8a; color: #f0c8ff; } .tag.sleep { background: #2a3a8a; color: #c8d8ff; }
 .tag.wall { background: #1a5a6a; color: var(--cy2); } .tag.charge { background: #8a4a10; color: #ffd8a0; }
+.tag.up { background: #1e6a3a; color: #c8ffd8; } .tag.down { background: #8a2a2a; color: #ffd0c8; }
+.pm b { white-space: normal; line-height: 1.55; } .pm b .tag { display: inline-block; white-space: nowrap; margin-left: 3px; line-height: 1.4; vertical-align: 1px; }  /* many tags wrap below the name instead of being cut off */
 .pop.poison { color: #d080ff; } .pop.sleep { color: #a0b8ff; font-size: 26px; }
 .card .gear { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 13px; color: var(--ink); }
 .card .gear span { display: inline-flex; gap: 6px; align-items: baseline; } .card .gear i { font-style: normal; font-size: 11px; color: var(--gold); font-family: var(--mono); }

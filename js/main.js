@@ -112,12 +112,15 @@ function partyBars(cur) {
     <div class="bar hp"><i style="width:${(u.hp / u.maxhp) * 100}%"></i></div><div class="nums">${u.hp}/${u.maxhp}</div>
     <div class="bar mp"><i style="width:${(u.mp / u.maxmp) * 100}%"></i></div><div class="nums">${u.mp}/${u.maxmp}</div></div>`).join('');
 }
-// little tags for ailments, walls and Charge
+// little tags for ailments, walls, Charge and raised / lowered stats
+const AIL_TAG = { poison: ['毒', 'PSN'], sleep: ['眠', 'SLP'] };
 function statusTags(u) {
   let t = '';
-  if (u.ail) t += `<em class="tag ${u.ail}">${esc(T(AIL_NAME[u.ail]))}</em>`;
+  if (u.ail) t += `<em class="tag ${u.ail}" title="${esc(T(AIL_NAME[u.ail]))}">${esc(T(AIL_TAG[u.ail] || AIL_NAME[u.ail]))}</em>`;
   if (u.shield && (u.shield.phys || u.shield.mag)) t += `<em class="tag wall">${u.shield.phys && u.shield.mag ? '◈◈' : u.shield.phys ? L('物◈', 'P◈') : L('魔◈', 'M◈')}</em>`;
   if (u.charge) t += `<em class="tag charge">${u.charge === 'phys' ? L('蓄', 'CHG') : L('集', 'FOC')}</em>`;
+  // raised or lowered attack / defence (two steps show a double arrow)
+  for (const [k, zh, en] of [['atk', '攻', 'ATK'], ['def', '防', 'DEF']]) { const v = u.buff ? u.buff[k] : 0; if (v) t += `<em class="tag ${v > 0 ? 'up' : 'down'}">${L(zh, en)}${(v > 0 ? '↑' : '↓').repeat(Math.abs(v))}</em>`; }
   return t;
 }
 function reveal() {
@@ -803,4 +806,4 @@ R.cam = { x: TILE, z: TILE, yaw: Math.PI };
 document.documentElement.lang = EN() ? 'en' : 'zh-Hant';
 titleScreen();
 requestAnimationFrame(frame);
-window.__dc = { get S() { return S; }, R, newGame, loadGame, enterFloor, battle, randomBattle, terminal, fusionAltar, get BT() { return BT; }, press: (k) => modal && modal(k), tryStep, turn, hud, makeDemon, encounter };
+window.__dc = { get S() { return S; }, R, newGame, loadGame, enterFloor, battle, randomBattle, terminal, fusionAltar, get BT() { return BT; }, press: (k) => modal && modal(k), tryStep, turn, hud, makeDemon, encounter, drawBattle };
