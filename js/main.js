@@ -86,7 +86,7 @@ function choose(title, items, opts = {}) {
     const done = (v) => { modal = null; closeBox(d); audio.play(v < 0 ? 'cancel' : 'ok'); resolve(v); };
     const pickIt = () => { if (!items[sel] || items[sel].disabled) { audio.play('cancel'); return; } done(sel); };
     modal = (k) => {
-      if (k === 'up' || k === 'down') { const step = k === 'up' ? -1 : 1; for (let n = 0; n < items.length; n++) { sel = (sel + step + items.length) % items.length; if (!items[sel].disabled) break; } audio.play('menu'); draw(); }
+      if (k === 'up' || k === 'down' || (opts.row && (k === 'left' || k === 'right'))) { const step = k === 'up' || k === 'left' ? -1 : 1; for (let n = 0; n < items.length; n++) { sel = (sel + step + items.length) % items.length; if (!items[sel].disabled) break; } audio.play('menu'); draw(); }
       else if (k === 'ok') pickIt(); else if (k === 'back' && opts.cancel !== false) done(-1);
     };
     draw();
@@ -521,11 +521,19 @@ function drawBattle() {
   partyBars(B.side === 0 ? actor(B) : null);
 }
 // pick a target: enemies ('one'), allies ('ally') or the fallen ('dead')
+// (the list sits below the demons and above the party, so it never hides who you are choosing; the one under the
+// cursor glows)
+function markTarget(u) {
+  document.querySelectorAll('.foe.tgt, .pm.tgt').forEach((e) => e.classList.remove('tgt'));
+  if (!u) return;
+  const i = BT.B.sides[1].indexOf(u), el = i >= 0 ? $('foes').querySelector(`.foe[data-i="${i}"]`) : $('party').querySelector(`.pm[data-uid="${u.uid}"]`);
+  if (el) el.classList.add('tgt');
+}
 async function pickTarget(B, kind) {
-  if (kind === 'one') { const live = B.sides[1].filter((u) => alive(u) && !u.left); if (live.length === 1) return live[0]; const i = await choose(L('目標', 'Target'), live.map((u) => ({ label: esc(nm(u)), right: `Lv${u.lv}` })), { cls: 'small' }); return i < 0 ? null : live[i]; }
+  if (kind === 'one') { const live = B.sides[1].filter((u) => alive(u) && !u.left); if (live.length === 1) return live[0]; const i = await choose(L('目標', 'Target'), live.map((u) => ({ label: esc(nm(u)), right: `Lv${u.lv}` })), { cls: 'small tgt', row: true, onSel: (k) => markTarget(live[k]) }); markTarget(null); return i < 0 ? null : live[i]; }
   const list = B.sides[0].filter((u) => (kind === 'dead' ? !alive(u) : alive(u)));
   if (!list.length) { toast(L('沒有可以選的對象', 'No one to choose')); return null; }
-  const i = await choose(L('對象', 'Target'), list.map((u) => ({ label: esc(nm(u)), right: `${u.hp}/${u.maxhp}` })), { cls: 'small' }); return i < 0 ? null : list[i];
+  const i = await choose(L('對象', 'Target'), list.map((u) => ({ label: esc(nm(u)), right: `${u.hp}/${u.maxhp}` })), { cls: 'small tgt', row: true, onSel: (k) => markTarget(list[k]) }); markTarget(null); return i < 0 ? null : list[i];
 }
 async function playerTurn(a) {
   const B = BT.B;
@@ -536,7 +544,7 @@ async function playerTurn(a) {
     const cmds = [['attack', L('攻擊', 'Attack')], ['skill', L('技能', 'Skills')], ['item', L('道具', 'Items')]];
     if (a.hero) cmds.push(['talk', L('交談', 'Talk')], ['summon', L('召喚', 'Summon')]);
     cmds.push(['pass', L('跳過', 'Pass')], ['run', L('逃跑', 'Run')]);
-    const i = await choose(`<b>${esc(nm(a))}</b> <small>HP ${a.hp}/${a.maxhp} MP ${a.mp}/${a.maxmp}</small>`, cmds.map(([k, l]) => ({ label: l, disabled: k === 'item' && !Object.keys(S.bag).some((x) => ITEMS[x].use && S.bag[x] > 0) })), { cancel: false, cls: 'cmd' });
+    const i = await choose(`<b>${esc(nm(a))}</b> <small>HP ${a.hp}/${a.maxhp} MP ${a.mp}/${a.maxmp}</small>`, cmds.map(([k, l]) => ({ label: l, disabled: k === 'item' && !Object.keys(S.bag).some((x) => ITEMS[x].use && S.bag[x] > 0) })), { cancel: false, cls: 'cmd main', row: true });
     const c = cmds[i][0];
     if (c === 'attack') { const t = await pickTarget(B, 'one'); if (!t) continue; const res = useSkill(B, a, 'attack', [t]); await showEvents(res.ev, a, 'attack'); return; }
     if (c === 'skill') {
@@ -599,12 +607,12 @@ async function talk(B, hero, d) {
     if (p.kind === 'end') { await talkEnd(B, d, p); return; }
     if (p.kind === 'question') {
       await say([p.text], who);
-      const i = await choose(esc(T(p.text)), p.answers.map((a) => ({ label: esc(T(a)) })), { cancel: false });
+      const i = await choose(esc(T(p.text)), p.answers.map((a) => ({ label: esc(T(a)) })), { cancel: false, cls: 'talk' });
       const r = talkAnswer(Tk, i); audio.play('talk'); await say([r.text], who);
     } else {
       await say([p.text], who);
       const can = p.what === 'macca' ? S.macca >= p.amount : p.what === 'item' ? (S.bag[p.item] || 0) > 0 : S.hero.hp > p.amount;
-      const i = await choose(esc(T(p.text)), [{ label: L('答應', 'Agree'), disabled: !can }, { label: L('拒絕', 'Refuse') }], { cancel: false });
+      const i = await choose(esc(T(p.text)), [{ label: L('答應', 'Agree'), disabled: !can }, { label: L('拒絕', 'Refuse') }], { cancel: false, cls: 'talk' });
       if (i === 0) { if (p.what === 'macca') { S.macca -= p.amount; ctx.macca = S.macca; } else if (p.what === 'item') { S.bag[p.item]--; if (!S.bag[p.item]) delete S.bag[p.item]; } else S.hero.hp -= p.amount; audio.play('gold'); }
       const r = talkAnswer(Tk, i === 0); await say([r.text], who); hud(); drawBattle();
     }

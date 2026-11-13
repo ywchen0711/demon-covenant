@@ -135,3 +135,39 @@ body.shake #view, body.shake #battle { animation: shake 0.3s; }
 .card .gear span { display: inline-flex; gap: 6px; align-items: baseline; } .card .gear i { font-style: normal; font-size: 11px; color: var(--gold); font-family: var(--mono); }
 .foe canvas { filter: drop-shadow(0 6px 14px #000) drop-shadow(0 0 18px rgba(255, 60, 90, 0.18)); }
 .foe.boss canvas { filter: drop-shadow(0 6px 14px #000) drop-shadow(0 0 28px rgba(255, 40, 60, 0.45)); }
+
+/* ---------- battle windows keep clear of the demons and the party ---------- */
+/* choosing a target: a compact row under the demons, above the party; the one under the cursor glows */
+.box.list.tgt { top: auto; bottom: 92px; left: 50%; transform: translateX(-50%); width: auto; max-width: calc(100vw - 32px); padding: 8px 10px; gap: 6px; }
+.box.list.tgt .items { flex-direction: row; flex-wrap: wrap; justify-content: center; gap: 6px; }
+.box.list.tgt .item { padding: 6px 12px; font-size: 15px; }
+.box.list.tgt .title { font-size: 14px; } .box.list.tgt .cancel { padding: 3px 12px; }
+.foe.tgt .fn { color: var(--gold); } .foe.tgt canvas { filter: drop-shadow(0 6px 14px #000) drop-shadow(0 0 16px rgba(255, 210, 90, 0.85)); }
+.pm.tgt { border-color: var(--cy); box-shadow: 0 0 12px rgba(63, 224, 255, 0.6); }
+/* battle messages sit above the party's HP bars, not on them */
+#battle:not([hidden]) ~ #ui .box.msg { bottom: 92px; }
+@media (max-width: 700px) { .box.list.tgt { bottom: 150px; } }
+/* phones: the party is a column on the right, so battle windows use the space to its left (the walking pad is not needed in battle) */
+@media (pointer: coarse) {
+  body:has(#battle:not([hidden])) #pad { display: none; }
+  #battle:not([hidden]) ~ #ui .box.list.cmd, #battle:not([hidden]) ~ #ui .box.list.tgt, #battle:not([hidden]) ~ #ui .box.list.talk, #battle:not([hidden]) ~ #ui .box.msg { left: 8px; right: 158px; bottom: 10px; top: auto; transform: none; width: auto; max-width: none; }
+  #battle:not([hidden]) ~ #ui .box.list.cmd, #battle:not([hidden]) ~ #ui .box.list.tgt, #battle:not([hidden]) ~ #ui .box.list.talk { max-height: 32vh; }
+  #battle:not([hidden]) ~ #ui .box.list.tgt .items { flex-direction: column; flex-wrap: nowrap; }
+  #battle:not([hidden]) ~ #ui .box.msg { min-height: 0; font-size: 16px; padding: 12px 14px 20px; }
+}
+/* wide screens: the command list is a row under the demons too, so no demon's name or HP is hidden while you choose */
+@media (min-width: 701px) and (pointer: fine) {
+  .box.list.cmd.main { top: auto; bottom: 92px; left: 50%; transform: translateX(-50%); width: auto; max-width: calc(100vw - 32px); padding: 8px 10px; gap: 6px; }
+  .box.list.cmd.main .items { flex-direction: row; flex-wrap: wrap; justify-content: center; gap: 6px; }
+  .box.list.cmd.main .item { padding: 6px 14px; font-size: 15px; }
+  .box.list.cmd.main .title { font-size: 14px; }
+}
+/* narrow screens: in battle the turn icons take the top edge, so the place name steps aside instead of running under them */
+@media (max-width: 700px) { body:has(#battle:not([hidden])) #where { visibility: hidden; } }
+/* talking with a demon: the question and answers sit low, so the demon you are talking to stays in view */
+@media (pointer: fine) { #battle:not([hidden]) ~ #ui .box.list.talk { top: auto; bottom: 92px; transform: translateX(-50%); width: min(560px, calc(100vw - 32px)); } }
+/* phones: the place name wraps instead of running into the moon; lists keep left of the party's HP column */
+@media (max-width: 700px) { #where { max-width: calc(100vw - 200px); line-height: 1.25; } }
+@media (pointer: coarse) { .box.list:not(.cmd):not(.tgt):not(.talk) { left: 8px; right: 158px; width: auto; transform: translateY(-50%); } }
+/* a long note on the right of a list row (equipment, prices) wraps under itself instead of being cut off */
+.box .item > small { white-space: normal; text-align: right; overflow-wrap: anywhere; min-width: 0; } .box .item > span { flex-shrink: 0; max-width: 62%; }
